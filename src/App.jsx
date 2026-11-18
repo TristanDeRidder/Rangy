@@ -10,6 +10,7 @@ import Panel from './ui/Panel.jsx';
 import TripsPanel, { TripsFooter } from './ui/TripsPanel.jsx';
 import WinterPanel, { WinterFooter } from './ui/WinterPanel.jsx';
 import WeatherDialog from './ui/WeatherDialog.jsx';
+import WelcomeDialog, { welcomeSeen } from './ui/WelcomeDialog.jsx';
 import { IconArrow } from './ui/icons.jsx';
 import { btnPrimary } from './ui/cls.js';
 
@@ -32,13 +33,15 @@ function useMediaQuery(query) {
 }
 
 export default function App() {
-  const { scene, setTripType, setSpeedKmh, setTempC, setTrips } = useScenario();
+  const { scene, setTrips, ...setters } = useScenario();
+  const { setTempC } = setters;
   const [mode] = useState(getViewMode); // '3d' of 'svg', zie scene/shared/viewMode.js
   const wide = useMediaQuery(WIDE);
   const [view, setView] = useState('overview'); // 'overview' | 'trips' | 'winter'
   const [sheetOpen, setSheetOpen] = useState(true);
   const weather = useWeather();
   const [weatherOpen, setWeatherOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(() => !welcomeSeen());
   const todayC = weather.status === 'ready' ? weather.data.tempC : undefined;
 
   // nieuw weer binnen (start of andere plaats): temperatuurslider naar vandaag zetten (bereik −10…30 °C)
@@ -49,7 +52,6 @@ export default function App() {
 
   const close = useCallback(() => setView('overview'), []);
   const toggle = (v) => setView((cur) => (cur === v ? 'overview' : v));
-  const setters = { setTripType, setSpeedKmh, setTempC };
 
   // Op de gsm bedekt een paneel het hele scherm: het overzicht erachter is dan niet bereikbaar
   useEffect(() => {
@@ -71,7 +73,7 @@ export default function App() {
         {wide ? (
           <div className="grid grid-cols-[401px_1fr] gap-10 items-center max-w-378 mx-auto pt-6 px-12 pb-10 min-h-[calc(100vh-80px)]">
             <div className="flex flex-col gap-7">
-              <Result scene={scene} showLink onWinter={() => toggle('winter')} />
+              <Result scene={scene} showLink onWinter={() => toggle('winter')} onCar={() => setWelcomeOpen(true)} />
               <Controls variant="panel" scene={scene} todayC={todayC} {...setters} />
               {cta}
             </div>
@@ -81,7 +83,7 @@ export default function App() {
           </div>
         ) : (
           <>
-            <Result scene={scene} />
+            <Result scene={scene} onCar={() => setWelcomeOpen(true)} />
             {/* vult de ruimte tussen resultaat en omstandigheden: scène in het midden = gelijke afstand erboven en eronder */}
             <div className="flex-1 flex flex-col justify-center w-full py-4">
               <RoadScene scene={scene} mode={mode} />
@@ -106,6 +108,7 @@ export default function App() {
       </div>
 
       <WeatherDialog open={weatherOpen} onClose={() => setWeatherOpen(false)} weather={weather} />
+      <WelcomeDialog open={welcomeOpen} onClose={() => setWelcomeOpen(false)} />
 
       <Panel title="Mijn ritten" open={view === 'trips'} onClose={close} wide={wide} footer={<TripsFooter onDone={close} />}>
         <TripsPanel scene={scene} setTrips={setTrips} />

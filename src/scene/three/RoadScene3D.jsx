@@ -28,7 +28,7 @@ export default function RoadScene3D({ scene }) {
   const [labels, setLabels] = useState({ range: [], tags: [] });
   const label = `3D-baan met bereik tot ${Math.round(scene.rangeKm.low)} km zeker en tot ${Math.round(
     scene.rangeKm.high,
-  )} km mogelijk. ${scene.trips.map((t) => `${t.name} ${t.km} km: ${STATUS_LABEL[t.status]}`).join('. ')}.`;
+  )} km mogelijk. ${scene.trips.map((t) => `${t.name} ${t.km} km, ${t.type}: ${STATUS_LABEL[t.status]}`).join('. ')}.`;
 
   return (
     <div className={sceneBox} role="img" aria-label={label}>
@@ -115,15 +115,17 @@ function Markers({ scene }) {
   return scene.trips.map((trip, i) => {
     const { base, top } = markPos(trip, i);
     const color = STATUS_COLOR[trip.status];
+    // rit van een ander type dan wat de baan toont: half doorzichtig
+    const mat = { color, transparent: trip.dim, opacity: trip.dim ? 0.45 : 1 };
     return (
       <group key={trip.id}>
         <mesh position={[base[0], 0.05, base[2]]}>
           <boxGeometry args={[0.35, 0.1, 0.35]} />
-          <meshStandardMaterial color={color} />
+          <meshStandardMaterial {...mat} />
         </mesh>
         <mesh position={[base[0], top[1] / 2, base[2]]}>
           <boxGeometry args={[0.04, top[1], 0.04]} />
-          <meshStandardMaterial color={color} />
+          <meshStandardMaterial {...mat} />
         </mesh>
       </group>
     );

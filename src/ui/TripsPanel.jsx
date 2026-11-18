@@ -16,7 +16,7 @@ export default function TripsPanel({ scene, setTrips }) {
   const update = (id, patch) => setTrips(all.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   const remove = (id) => setTrips(all.filter((t) => t.id !== id));
   // geen crypto.randomUUID: dat werkt niet via http op je gsm (geen beveiligde context)
-  const add = () => setTrips([...all, { id: Date.now().toString(36), name: 'Nieuwe rit', km: 100 }]);
+  const add = () => setTrips([...all, { id: Date.now().toString(36), name: 'Nieuwe rit', km: 100, type: tripType }]);
 
   const low = round10(scene.rangeKm.low);
   const high = round10(scene.rangeKm.high);
@@ -31,9 +31,11 @@ export default function TripsPanel({ scene, setTrips }) {
 
   return (
     <>
-      <p className="text-[15px] leading-[22px]">Vul de afstanden in die je geregeld rijdt. Ze verschijnen als markeringen langs de baan.</p>
+      <p className="text-[15px] leading-[22px]">
+        Vul de afstanden in die je geregeld rijdt en kies of het vooral stad of snelweg is. Ze verschijnen als markeringen langs de baan.
+      </p>
       <p className={eyebrow}>
-        BIJ {tripType === 'stad' ? 'STADSRIT' : `SNELWEG · ${speedKmh} KM/H`} · {tempC} °C
+        GRENZEN HIERONDER: {tripType === 'stad' ? 'STAD' : `SNELWEG · ${speedKmh} KM/H`} · {tempC} °C
       </p>
 
       <ol className="relative flex flex-col gap-3 mt-1 before:absolute before:left-[8.5px] before:top-[22px] before:bottom-[22px] before:border-l before:border-dashed before:border-ink">
@@ -68,9 +70,12 @@ export default function TripsPanel({ scene, setTrips }) {
                   </label>
                   <button type="button" className="w-8 h-11 shrink-0 text-[20px] text-muted" onClick={() => remove(t.id)} aria-label={`${t.name} verwijderen`}>×</button>
                 </div>
-                <span className="col-start-2 justify-self-start px-[7px] py-[3px] font-mono text-[12px] font-semibold tracking-[0.06em]" style={{ background: STATUS_COLOR[t.status] }}>
-                  {STATUS_LABEL[t.status].toUpperCase()}
-                </span>
+                <div className="col-start-2 flex justify-between items-center gap-2">
+                  <span className="px-[7px] py-[3px] font-mono text-[12px] font-semibold tracking-[0.06em]" style={{ background: STATUS_COLOR[t.status] }}>
+                    {STATUS_LABEL[t.status].toUpperCase()}{t.dim ? ` · ${t.type.toUpperCase()}` : ''}
+                  </span>
+                  <TypeSwitch trip={t} onChange={(type) => update(t.id, { type })} />
+                </div>
               </li>
             </Fragment>
           );
@@ -83,6 +88,27 @@ export default function TripsPanel({ scene, setTrips }) {
         </li>
       </ol>
     </>
+  );
+}
+
+/**
+ * Stad of snelweg per rit. Zichtbaar 24 px hoog, klikvlak 44 px (onzichtbare rand via ::before).
+ */
+function TypeSwitch({ trip, onChange }) {
+  return (
+    <div className="inline-flex shrink-0 rounded-xl border border-ink bg-surface" role="group" aria-label={`Type van ${trip.name}`}>
+      {['stad', 'snelweg'].map((type) => (
+        <button
+          key={type}
+          type="button"
+          className="relative h-6 px-2.5 rounded-xl font-mono text-[10px] tracking-[0.08em] aria-pressed:bg-ink aria-pressed:text-white aria-pressed:font-semibold before:absolute before:-inset-y-2.5 before:inset-x-0"
+          aria-pressed={trip.type === type}
+          onClick={() => onChange(type)}
+        >
+          {type.toUpperCase()}
+        </button>
+      ))}
+    </div>
   );
 }
 

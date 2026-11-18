@@ -42,7 +42,7 @@ export default function RoadSceneSVG({ scene }) {
 
   const label = `Baan met bereik tot ${Math.round(scene.rangeKm.low)} km zeker en tot ${Math.round(
     scene.rangeKm.high,
-  )} km mogelijk. ${scene.trips.map((t) => `${t.name} ${t.km} km: ${STATUS_LABEL[t.status]}`).join('. ')}.`;
+  )} km mogelijk. ${scene.trips.map((t) => `${t.name} ${t.km} km, ${t.type}: ${STATUS_LABEL[t.status]}`).join('. ')}.`;
 
   return (
     <div className={sceneBox}>
@@ -76,7 +76,7 @@ export default function RoadSceneSVG({ scene }) {
 
         {/* Markeringen op de baan en palen */}
         {marks.map(({ trip, x, y, s, top }) => (
-          <g key={trip.id}>
+          <g key={trip.id} opacity={trip.dim ? 0.5 : 1}>
             <rect x={x - s / 2} y={y - s / 2} width={s} height={s} fill={STATUS_COLOR[trip.status]} />
             <line x1={x} y1={y} x2={x} y2={top} stroke={STATUS_COLOR[trip.status]} strokeWidth="1.5" />
           </g>

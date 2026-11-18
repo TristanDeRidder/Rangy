@@ -1,6 +1,6 @@
 # Rangy
 
-Mobiele webtool die toont welke van je eigen ritten een EV aankan, en hoe snelheid en temperatuur dat veranderen.
+Mobiele webtool die toont welke van je eigen ritten een EV aankan, en hoe snelheid, temperatuur, terrein en lading dat veranderen.
 De baan kan in 3D (React Three Fiber) of als SVG getoond worden. Beide krijgen exact dezelfde gegevens.
 
 ## Starten
@@ -40,10 +40,12 @@ src/
   ui/
     Topbar.jsx           merknaam, weer, info-knop
     Result.jsx           het grote getal en de marge
-    Controls.jsx         omstandigheden: toggle + paneel (gsm) of altijd open (laptop)
+    Controls.jsx         omstandigheden: bereik voor stad/snelweg, terrein, snelheid, temperatuur, lading
     Slider.jsx           slider in de stijl van het ontwerp, op een echte input[type=range]
+    Stepper.jsx          teller − / + (lading)
+    WelcomeDialog.jsx    welkom bij het eerste bezoek: referentiewagen en disclaimer
     Panel.jsx            volledig scherm (gsm) of zijpaneel (laptop)
-    TripsPanel.jsx       mijn ritten: tijdlijn met grenzen van het bereik
+    TripsPanel.jsx       mijn ritten: tijdlijn met grenzen van het bereik, stad/snelweg per rit
     WinterPanel.jsx      waarom minder in de winter, berekend met het model
 ```
 
@@ -65,3 +67,15 @@ rekenmodel → buildScene() → scène ─┬─→ RoadScene3D  (of)  RoadScene
 
 - **Gsm (< 900 px):** overzicht met de omstandigheden achter een toggle; "Mijn ritten" en "Uitleg winter" schuiven als volledig scherm binnen (info-knop of knop onderaan).
 - **Laptop (≥ 900 px):** twee kolommen, omstandigheden altijd open; panelen schuiven rechts binnen en de baan verkleint ernaast.
+## Omstandigheden in het model
+
+| Keuze | Hoe het model ermee rekent | Bron |
+| --- | --- | --- |
+| Stad of snelweg per rit | elke rit krijgt de status van zijn eigen type; de schakelaar op het overzicht kiest welk bereik de baan toont, ritten van het andere type staan gedimd | – |
+| Terrein | afwisselend evenveel km bergop als bergaf: vlak 0 %, glooiend ±3 %, heuvelachtig ±5 % | eigen aanname |
+| Passagiers | 75 kg per persoon, zelfde als de bestuurder in het model | Verordening (EU) 1230/2012 |
+| Bagage | 20 kg per stuk | eigen aanname |
+
+Ter controle (eigen berekening, snelweg 110 km/h, 8 °C, variant literatuur): vlak 381 km, glooiend 364 km, heuvelachtig 325 km.
+
+Het welkomstvenster verschijnt één keer (`rangy.welcome` in localStorage) en opent opnieuw via de regel met de referentiewagen onder het resultaat.

@@ -7,16 +7,17 @@ const STORAGE_KEY = 'rangy.trips';
 export const TODAY = { tempC: 8 };
 
 const DEFAULT_TRIPS = [
-  { id: 'werk', name: 'Woon-werk', km: 45 },
-  { id: 'weekend', name: 'Weekendrit', km: 150 },
-  { id: 'uitstap', name: 'Uitstap', km: 340 },
-  { id: 'vakantie', name: 'Vakantie', km: 600 },
+  { id: 'werk', name: 'Woon-werk', km: 45, type: 'stad' },
+  { id: 'weekend', name: 'Weekendrit', km: 150, type: 'snelweg' },
+  { id: 'uitstap', name: 'Uitstap', km: 340, type: 'snelweg' },
+  { id: 'vakantie', name: 'Vakantie', km: 600, type: 'snelweg' },
 ];
 
 function loadTrips() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (Array.isArray(saved) && saved.length) return saved;
+    // oudere opgeslagen ritten hebben nog geen type: die waren snelwegritten
+    if (Array.isArray(saved) && saved.length) return saved.map((t) => ({ type: 'snelweg', ...t }));
   } catch {
     /* geen opslag beschikbaar: standaardritten */
   }
@@ -31,6 +32,9 @@ export function useScenario(initial = {}) {
   const [tripType, setTripType] = useState(initial.tripType ?? 'snelweg');
   const [speedKmh, setSpeedKmh] = useState(initial.speedKmh ?? 110);
   const [tempC, setTempC] = useState(initial.tempC ?? TODAY.tempC);
+  const [terrain, setTerrain] = useState(initial.terrain ?? 'vlak');
+  const [passengers, setPassengers] = useState(initial.passengers ?? 0);
+  const [bags, setBags] = useState(initial.bags ?? 0);
   const [trips, setTripsState] = useState(loadTrips);
 
   const setTrips = (next) => {
@@ -43,9 +47,9 @@ export function useScenario(initial = {}) {
   };
 
   const scene = useMemo(
-    () => buildScene({ tripType, speedKmh, tempC, trips }),
-    [tripType, speedKmh, tempC, trips],
+    () => buildScene({ tripType, speedKmh, tempC, terrain, passengers, bags, trips }),
+    [tripType, speedKmh, tempC, terrain, passengers, bags, trips],
   );
 
-  return { scene, setTripType, setSpeedKmh, setTempC, setTrips };
+  return { scene, setTripType, setSpeedKmh, setTempC, setTerrain, setPassengers, setBags, setTrips };
 }

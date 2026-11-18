@@ -4,7 +4,6 @@
  */
 import {
   DEFAULT_VEHICLE,
-  rangeKm,
   powerBreakdown,
   simulateCycle,
   capacityFactor,
@@ -23,21 +22,49 @@ const BAND = calibrated.bandFactor;
 // Stadsrit = lage + middelste fase van de WLTC (klasse 3b)
 const CITY = wltc.kmh.slice(0, wltc.phases.medium[1] + 1);
 
-function cityRange(veh, tempC) {
-  const { whPerKm } = simulateCycle(CITY, { tempC }, veh);
-  return (veh.usableKWh * 1000 * capacityFactor(tempC, veh)) / whPerKm;
+/**
+ * Terrein als helling die afwisselend bergop en bergaf gaat (evenveel km), in %.
+ * Een vaste helling over de hele rit zou betekenen dat je 300 km lang klimt of daalt.
+ * Zo kost terrein alleen wat je bergaf niet terugwint. [eigen aanname]
+ */
+export const TERRAIN = {
+  vlak: { gradePct: 0, label: 'Vlak' },
+  glooiend: { gradePct: 3, label: 'Glooiend' },
+  heuvelachtig: { gradePct: 5, label: 'Heuvelachtig' },
+};
+
+/** Lading. Passagier = standaardmassa bestuurder (Verordening (EU) 1230/2012). Bagage: [eigen aanname]. */
+export const KG_PER_PASSENGER = DEFAULT_VEHICLE.driverKg;
+export const KG_PER_BAG = 20;
+export const MAX_PASSENGERS = 4; // Model Y: 5 zitplaatsen, bestuurder zit al in het model
+export const MAX_BAGS = 8;
+
+export function extraKgOf({ passengers = 0, bags = 0 }) {
+  return passengers * KG_PER_PASSENGER + bags * KG_PER_BAG;
 }
 
+/** Gemiddelde over evenveel km bergop als bergaf. */
+const hills = (whAt, gradePct) => (gradePct ? (whAt(gradePct) + whAt(-gradePct)) / 2 : whAt(0));
+
+const whCity = (veh, { tempC, extraKg, gradePct }) =>
+  hills((g) => simulateCycle(CITY, { tempC, extraKg, gradePct: g }, veh).whPerKm, gradePct);
+
+const whHighway = (veh, { speedKmh, tempC, extraKg, gradePct }) =>
+  hills((g) => consumptionWhPerKm({ speedKmh, tempC, extraKg, gradePct: g }, veh), gradePct);
+
+const kmFor = (veh, wh, tempC) => (veh.usableKWh * 1000 * capacityFactor(tempC, veh)) / wh;
+
 /** Bandbreedte van de actieradius in km. */
-export function rangeBand({ tripType, speedKmh, tempC }) {
+export function rangeBand({ tripType, speedKmh, tempC, terrain = 'vlak', passengers = 0, bags = 0 }) {
+  const c = { speedKmh, tempC, extraKg: extraKgOf({ passengers, bags }), gradePct: TERRAIN[terrain]?.gradePct ?? 0 };
   let a;
   let b;
   if (tripType === 'stad') {
-    a = cityRange(VEH_LIT, tempC);
-    b = cityRange(VEH_EVDB, tempC);
+    a = kmFor(VEH_LIT, whCity(VEH_LIT, c), tempC);
+    b = kmFor(VEH_EVDB, whCity(VEH_EVDB, c), tempC);
   } else {
-    a = rangeKm({ speedKmh, tempC }, VEH_LIT);
-    b = rangeKm({ speedKmh, tempC }, VEH_EVDB) / BAND;
+    a = kmFor(VEH_LIT, whHighway(VEH_LIT, c), tempC);
+    b = kmFor(VEH_EVDB, whHighway(VEH_EVDB, c), tempC) / BAND;
   }
   const low = Math.min(a, b);
   const high = Math.max(a, b);
@@ -58,12 +85,18 @@ export function tripStatus(km, band, reservePct = 0) {
  */
 export function buildScene(inputs) {
   const { tripType, speedKmh, tempC, trips, reservePct = 0 } = inputs;
-  const band = rangeBand(inputs);
+  // Elke rit heeft een eigen type. De baan toont het bereik van het gekozen type (tripType).
+  const bands = {
+    stad: rangeBand({ ...inputs, tripType: 'stad' }),
+    snelweg: rangeBand({ ...inputs, tripType: 'snelweg' }),
+  };
+  const band = bands[tripType];
   const maxKm = scaleMaxKm(band.high, trips.map((t) => t.km));
+  const extraKg = extraKgOf(inputs);
 
   // Krachten: bij de stad rekenen we met een gemiddelde snelheid van 30 km/h (alleen voor de pijlen)
   const v = tripType === 'stad' ? 30 : speedKmh;
-  const p = powerBreakdown({ speedKmh: v, tempC }, VEH_LIT);
+  const p = powerBreakdown({ speedKmh: v, tempC, extraKg }, VEH_LIT);
   const parts = { aero: p.aero, roll: p.roll, grade: Math.max(0, p.grade ?? 0), hvac: p.hvac, base: p.base };
   const sum = Object.values(parts).reduce((s, x) => s + x, 0) || 1;
   const forces = Object.fromEntries(Object.entries(parts).map(([k, x]) => [k, x / sum]));
@@ -72,13 +105,18 @@ export function buildScene(inputs) {
   return {
     inputs,
     rangeKm: band,
+    bands,
     rangeT: { low: toT(band.low, maxKm), high: toT(band.high, maxKm) },
     maxKm,
+    extraKg,
     trips: [...trips]
       .sort((x, y) => x.km - y.km)
-      .map((t) => ({ ...t, status: tripStatus(t.km, band, reservePct), t: toT(t.km, maxKm) })),
+      .map((t) => {
+        const type = t.type ?? 'snelweg';
+        return { ...t, type, dim: type !== tripType, status: tripStatus(t.km, bands[type], reservePct), t: toT(t.km, maxKm) };
+      }),
     forces,
-    whPerKm: consumptionWhPerKm({ speedKmh: v, tempC }, VEH_LIT),
+    whPerKm: whHighway(VEH_LIT, { speedKmh: v, tempC, extraKg, gradePct: TERRAIN[inputs.terrain]?.gradePct ?? 0 }),
     heating: hvac > 0 && tempC < VEH_LIT.heatBelowC,
     cooling: hvac > 0 && tempC > VEH_LIT.coolAboveC,
   };
