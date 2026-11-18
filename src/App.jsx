@@ -9,6 +9,7 @@ import Panel from './ui/Panel.jsx';
 import TripsPanel, { TripsFooter } from './ui/TripsPanel.jsx';
 import WinterPanel, { WinterFooter } from './ui/WinterPanel.jsx';
 import { IconArrow } from './ui/icons.jsx';
+import { btnPrimary } from './ui/cls.js';
 
 const WIDE = '(min-width: 900px)';
 
@@ -44,35 +45,39 @@ export default function App() {
   }, [wide, view]);
 
   const cta = (
-    <button type="button" className="btn-primary btn-primary--split mono" onClick={() => toggle('trips')} aria-expanded={view === 'trips'}>
+    <button type="button" className={`${btnPrimary} justify-between px-5`} onClick={() => toggle('trips')} aria-expanded={view === 'trips'}>
       <span>MIJN RITTEN · {scene.trips.length}</span>
       <IconArrow />
     </button>
   );
 
   return (
-    <div className={`app ${wide ? 'app--wide' : 'app--narrow'} ${view !== 'overview' ? 'app--panel' : ''}`}>
-      <div className="app__main" ref={mainRef}>
+    <div>
+      <div className={wide ? '' : 'pb-[170px]'} ref={mainRef}>
         <Topbar place={TODAY.place} tempC={TODAY.tempC} mode={mode} onInfo={() => toggle('winter')} />
 
         {wide ? (
-          <div className="wide">
-            <div className="wide__left">
+          <div className="grid grid-cols-[401px_1fr] gap-10 items-center max-w-[1512px] mx-auto pt-6 px-12 pb-10 min-h-[calc(100vh-80px)]">
+            <div className="flex flex-col gap-7">
               <Result scene={scene} showLink onWinter={() => toggle('winter')} />
               <Controls variant="panel" scene={scene} todayC={TODAY.tempC} {...setters} />
               {cta}
             </div>
-            <div className="wide__stage">
+            <div className={`flex justify-center origin-[0%_55%] transition-transform duration-350 ease-soft ${view !== 'overview' ? 'scale-75' : ''}`}>
               <RoadScene scene={scene} mode={mode} />
             </div>
           </div>
         ) : (
           <>
             <Result scene={scene} />
-            <div className="stage">
+            <div className="w-full">
               <RoadScene scene={scene} mode={mode} />
             </div>
-            <div className={`dock ${sheetOpen ? 'dock--open' : ''}`}>
+            <div
+              className={`fixed inset-x-0 bottom-0 mx-auto max-w-[480px] flex flex-col gap-3 px-5 pb-[calc(20px+env(safe-area-inset-bottom))] transition-[background,box-shadow] duration-350 ease-soft ${
+                sheetOpen ? 'bg-surface border border-line rounded-t-3xl shadow-[0_-4px_24px_rgb(0_0_0/0.12)] pt-3' : ''
+              }`}
+            >
               <Controls
                 variant="sheet"
                 open={sheetOpen}

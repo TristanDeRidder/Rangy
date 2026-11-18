@@ -1,6 +1,7 @@
 import { perspectiveY } from '../shared/projection.js';
 import { COLORS, STATUS_COLOR, STATUS_LABEL } from '../shared/theme.js';
 import Tag, { tagLayout } from '../shared/Tag.jsx';
+import { rangeLabel, sceneBox, sceneOverlay } from '../../ui/cls.js';
 
 // Afmetingen van de tekening (zelfde verhoudingen als in Figma)
 const W = 393;
@@ -44,7 +45,7 @@ export default function RoadSceneSVG({ scene }) {
   )} km mogelijk. ${scene.trips.map((t) => `${t.name} ${t.km} km: ${STATUS_LABEL[t.status]}`).join('. ')}.`;
 
   return (
-    <div className="scene scene--svg">
+    <div className={sceneBox}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
         <polygon points={quad(BOT, HOR)} fill={COLORS.road} />
         <g stroke="#fff" strokeOpacity="0.55" strokeWidth="1.2">
@@ -85,9 +86,9 @@ export default function RoadSceneSVG({ scene }) {
       </svg>
 
       {/* HTML-laag: bereiklabels en ritlabels */}
-      <div className="scene__overlay">
-        <span className="range-label mono" style={{ top: pct(yHigh, H) }}>{Math.round(scene.rangeKm.high / 10) * 10} KM</span>
-        <span className="range-label mono" style={{ top: pct(yLow, H) }}>{Math.round(scene.rangeKm.low / 10) * 10} KM</span>
+      <div className={sceneOverlay}>
+        <span className={rangeLabel} style={{ top: pct(yHigh, H) }}>{Math.round(scene.rangeKm.high / 10) * 10} KM</span>
+        <span className={rangeLabel} style={{ top: pct(yLow, H) }}>{Math.round(scene.rangeKm.low / 10) * 10} KM</span>
         {marks.map(({ trip, side, x, top }) => (
           <Tag key={trip.id} trip={trip} side={side} x={pct(x, W)} y={pct(top, H)} />
         ))}

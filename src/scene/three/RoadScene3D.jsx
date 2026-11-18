@@ -4,6 +4,7 @@ import { Vector3 } from 'three';
 import { ROAD_LENGTH, toZ } from '../shared/projection.js';
 import { COLORS, STATUS_COLOR, STATUS_LABEL } from '../shared/theme.js';
 import Tag, { tagLayout } from '../shared/Tag.jsx';
+import { rangeLabel, sceneBox, sceneOverlay } from '../../ui/cls.js';
 
 const ROAD_WIDTH = 6;
 const POLE = 1.6; // basishoogte van een paal (scène-eenheden)
@@ -30,7 +31,7 @@ export default function RoadScene3D({ scene }) {
   )} km mogelijk. ${scene.trips.map((t) => `${t.name} ${t.km} km: ${STATUS_LABEL[t.status]}`).join('. ')}.`;
 
   return (
-    <div className="scene scene--3d" role="img" aria-label={label}>
+    <div className={sceneBox} role="img" aria-label={label}>
       <Canvas
         frameloop="demand"
         dpr={[1, 2]}
@@ -46,9 +47,9 @@ export default function RoadScene3D({ scene }) {
         <Projector scene={scene} onChange={setLabels} />
       </Canvas>
 
-      <div className="scene__overlay">
+      <div className={sceneOverlay}>
         {labels.range.map((r) => (
-          <span key={r.km} className="range-label mono" style={{ top: `${r.y}px` }}>{r.km} KM</span>
+          <span key={r.km} className={rangeLabel} style={{ top: `${r.y}px` }}>{r.km} KM</span>
         ))}
         {labels.tags.map(({ trip, side, x, y }) => (
           <Tag key={trip.id} trip={trip} side={side} x={`${x}px`} y={`${y}px`} />

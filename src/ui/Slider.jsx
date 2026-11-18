@@ -8,14 +8,14 @@ export default function Slider({ id, label, valueLabel, min, max, step, value, o
   // zelfde positie als het handvat: de duim (20 px) loopt niet tot de uiterste rand
   const at = (v) => `calc(10px + (100% - 20px) * ${(v - min) / (max - min)})`;
   return (
-    <div className={`slider ${disabled ? 'slider--disabled' : ''}`}>
-      <div className="slider__head mono">
+    <div className={`flex flex-col gap-1.5 ${disabled ? 'opacity-45' : ''}`}>
+      <div className="flex justify-between font-mono text-[12px] tracking-[0.08em]">
         <label htmlFor={id}>{label}</label>
-        <span className="strong">{valueLabel}</span>
+        <span className="font-semibold text-[13px]">{valueLabel}</span>
       </div>
-      <div className="slider__track" style={{ '--f': frac }}>
+      <div className="relative h-7" style={{ '--f': frac }}>
         {marks.map((m) => (
-          <span key={m.value} className="slider__tick" style={{ left: at(m.value) }} />
+          <span key={m.value} className="absolute top-[9px] w-px h-2.5 bg-ink" style={{ left: at(m.value) }} />
         ))}
         <input
           id={id}
@@ -29,15 +29,15 @@ export default function Slider({ id, label, valueLabel, min, max, step, value, o
         />
       </div>
       {ends && (
-        <div className="slider__ends mono"><span>{ends[0]}</span><span>{ends[1]}</span></div>
+        <div className="flex justify-between font-mono text-[12px] tracking-normal px-0.5"><span>{ends[0]}</span><span>{ends[1]}</span></div>
       )}
       {marks.some((m) => m.label) && (
-        <div className="slider__marks">
+        <div className="relative h-9">
           {marks.filter((m) => m.label).map((m) => (
             <button
               key={m.value}
               type="button"
-              className="slider__mark mono"
+              className="absolute -translate-x-1/2 px-1.5 min-h-9 flex flex-col items-center font-mono text-[12px] leading-[15px] tracking-normal text-muted"
               style={{ left: at(m.value) }}
               onClick={() => onChange(m.value)}
               aria-label={`${m.label} (${m.value} °C)`}
