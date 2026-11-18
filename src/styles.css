@@ -130,15 +130,23 @@ input[type='range']:focus-visible { outline: 2px solid var(--ink); outline-offse
   display: flex; flex-direction: column; gap: 12px; padding: 0 20px calc(20px + env(safe-area-inset-bottom));
   transition: background var(--t) var(--ease), box-shadow var(--t) var(--ease);
 }
-.dock--open { background: var(--surface); border-radius: 24px 24px 0 0; box-shadow: 0 -4px 24px rgb(0 0 0 / 0.12); padding-top: 12px; }
-.sheet { display: flex; flex-direction: column; gap: 14px; }
+.dock--open { background: var(--surface); border: 1px solid var(--line); border-radius: 24px 24px 0 0; box-shadow: 0 -4px 24px rgb(0 0 0 / 0.12); padding-top: 12px; }
+.sheet { display: flex; flex-direction: column; }
 .sheet__grip { width: 36px; height: 4px; border-radius: 2px; background: var(--line); align-self: center; }
-.sheet__toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding: 12px 12px 12px 16px; background: var(--surface); border: none; text-align: left; }
-.dock--open .sheet__toggle { padding: 0; }
+.sheet__toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding: 12px 12px 12px 16px; background: var(--surface); text-align: left; }
+.dock--open .sheet__toggle { padding: 0; border: none; }
 .sheet__summary { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .sheet__chevron { width: 36px; height: 36px; border-radius: 50%; background: #efefef; display: grid; place-items: center; }
-.sheet__body { display: flex; flex-direction: column; gap: 16px; }
-.sheet__body[hidden] { display: none; }
+/* Inhoud vloeiend openen: hoogte van 0 naar automatisch (grid 0fr → 1fr) */
+.sheet__body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows var(--t) var(--ease), opacity var(--t) var(--ease);
+}
+.sheet--open .sheet__body { grid-template-rows: 1fr; opacity: 1; }
+.sheet__inner { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 16px; padding-top: 14px; }
+.sheet__grip { margin-bottom: 14px; }
 
 /* ---------- panelen ---------- */
 .panel {

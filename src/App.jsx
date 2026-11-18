@@ -31,7 +31,7 @@ export default function App() {
   const [mode] = useState(getViewMode); // '3d' of 'svg', zie scene/shared/viewMode.js
   const wide = useMediaQuery(WIDE);
   const [view, setView] = useState('overview'); // 'overview' | 'trips' | 'winter'
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(true);
   const mainRef = useRef(null);
 
   const close = useCallback(() => setView('overview'), []);

@@ -2,9 +2,8 @@ import Slider from './Slider.jsx';
 import { IconChevronDown, IconChevronUp } from './icons.jsx';
 
 const TEMP_MARKS = [
-  { value: -5 },
-  { value: 0, label: 'Winter' },
-  { value: 20, label: 'Zomer' },
+  { value: 0, label: 'Vriespunt' },
+  { value: 20, label: 'Optimaal' },
 ];
 
 function Fields({ scene, setTripType, setSpeedKmh, setTempC, todayC }) {
@@ -79,8 +78,10 @@ export default function Controls({ variant, open, onToggle, scene, todayC, ...se
         </span>
         <span className="sheet__chevron">{open ? <IconChevronDown /> : <IconChevronUp />}</span>
       </button>
-      <div id="omstandigheden" className="sheet__body" hidden={!open}>
-        <Fields scene={scene} todayC={todayC} {...setters} />
+      <div id="omstandigheden" className="sheet__body" inert={open ? undefined : 'true'}>
+        <div className="sheet__inner">
+          <Fields scene={scene} todayC={todayC} {...setters} />
+        </div>
       </div>
     </section>
   );
