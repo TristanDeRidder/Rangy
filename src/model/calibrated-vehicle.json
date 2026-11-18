@@ -1,0 +1,37 @@
+{
+  "literatuur": {
+    "massKg": 1906,
+    "driverKg": 75,
+    "usableKWh": 60,
+    "cdA": 0.48359648567833324,
+    "crr": 0.007765557954643057,
+    "etaDrive": 0.85,
+    "etaRegen": 0.85,
+    "etaRegenBraking": 0.601,
+    "baseW": 300,
+    "heatBelowC": 20,
+    "coolAboveC": 22,
+    "heatWPerDeg": 45.3968253968254,
+    "coolWPerDeg": 74.7,
+    "capLossPerDeg": 0.002125,
+    "etaLossPerDeg": 0.00134375
+  },
+  "evdb": {
+    "massKg": 1906,
+    "driverKg": 75,
+    "usableKWh": 60,
+    "cdA": 0.48744013371811185,
+    "crr": 0.007455362642129359,
+    "etaDrive": 0.85,
+    "etaRegen": 0.85,
+    "etaRegenBraking": 0.601,
+    "baseW": 300,
+    "heatBelowC": 20,
+    "coolAboveC": 22,
+    "heatWPerDeg": 79.25866350271372,
+    "coolWPerDeg": 74.7,
+    "capLossPerDeg": 0.002125,
+    "etaLossPerDeg": 0.00134375
+  },
+  "bandFactor": 1.2183814315003132
+}
