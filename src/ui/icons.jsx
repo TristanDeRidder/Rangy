@@ -26,3 +26,6 @@ export const IconChevronDown = () => (
 export const IconLock = () => (
   <svg {...base} width={16} height={16}><rect {...stroke} strokeWidth={1.8} x="5" y="11" width="14" height="10" rx="2" /><path {...stroke} strokeWidth={1.8} d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
 );
+export const IconPin = () => (
+  <svg {...base} width={16} height={16}><path {...stroke} strokeWidth={1.8} d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21Z" /><circle {...stroke} strokeWidth={1.8} cx="12" cy="9.5" r="2.5" /></svg>
+);

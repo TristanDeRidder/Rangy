@@ -3,8 +3,8 @@ import { buildScene } from './buildScene.js';
 
 const STORAGE_KEY = 'rangy.trips';
 
-/** Weer van vandaag: voorlopig een vaste waarde, later via een weer-API. */
-export const TODAY = { place: 'Gent', tempC: 8 };
+/** Starttemperatuur van de slider, tot het echte weer binnen is (zie weather/useWeather.js). */
+export const TODAY = { tempC: 8 };
 
 const DEFAULT_TRIPS = [
   { id: 'werk', name: 'Woon-werk', km: 45 },

@@ -10,7 +10,7 @@ const TEMP_MARKS = [
 function Fields({ scene, setTripType, setSpeedKmh, setTempC, todayC }) {
   const { tripType, speedKmh, tempC } = scene.inputs;
   return (
-    <>
+    <div className="flex flex-col gap-7">
       <div className="grid grid-cols-2 gap-2" role="group" aria-label="Type rit">
         {['stad', 'snelweg'].map((t) => (
           <button
@@ -45,7 +45,7 @@ function Fields({ scene, setTripType, setSpeedKmh, setTempC, todayC }) {
         onChange={setTempC}
         marks={TEMP_MARKS}
       />
-    </>
+    </div>
   );
 }
 
@@ -60,7 +60,7 @@ export default function Controls({ variant, open, onToggle, scene, todayC, ...se
 
   if (variant === 'panel') {
     return (
-      <section className={`${card} flex flex-col gap-[18px] pt-5 px-6 pb-6`} aria-labelledby="omst-titel">
+      <section className={`${card} flex flex-col gap-4.5 pt-5 px-6 pb-6`} aria-labelledby="omst-titel">
         <h2 id="omst-titel" className={eyebrow}>OMSTANDIGHEDEN</h2>
         <Fields scene={scene} todayC={todayC} {...setters} />
       </section>

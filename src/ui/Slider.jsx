@@ -8,14 +8,14 @@ export default function Slider({ id, label, valueLabel, min, max, step, value, o
   // zelfde positie als het handvat: de duim (20 px) loopt niet tot de uiterste rand
   const at = (v) => `calc(10px + (100% - 20px) * ${(v - min) / (max - min)})`;
   return (
-    <div className={`flex flex-col gap-1.5 ${disabled ? 'opacity-45' : ''}`}>
+    <div className={`flex flex-col ${disabled ? 'opacity-45' : ''}`}>
       <div className="flex justify-between font-mono text-[12px] tracking-[0.08em]">
         <label htmlFor={id}>{label}</label>
         <span className="font-semibold text-[13px]">{valueLabel}</span>
       </div>
       <div className="relative h-7" style={{ '--f': frac }}>
         {marks.map((m) => (
-          <span key={m.value} className="absolute top-[9px] w-px h-2.5 bg-ink" style={{ left: at(m.value) }} />
+          <span key={m.value} className="absolute top-2.25 w-px h-2.5 bg-ink" style={{ left: at(m.value) }} />
         ))}
         <input
           id={id}
@@ -37,7 +37,7 @@ export default function Slider({ id, label, valueLabel, min, max, step, value, o
             <button
               key={m.value}
               type="button"
-              className="absolute -translate-x-1/2 px-1.5 min-h-9 flex flex-col items-center font-mono text-[12px] leading-[15px] tracking-normal text-muted"
+              className="absolute -translate-x-1/2 px-1.5 min-h-9 flex flex-col items-center font-mono text-[12px] leading-3.75 tracking-normal text-muted"
               style={{ left: at(m.value) }}
               onClick={() => onChange(m.value)}
               aria-label={`${m.label} (${m.value} °C)`}
