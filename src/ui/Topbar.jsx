@@ -6,7 +6,7 @@ export default function Topbar({ weather, onPlace, onInfo, mode }) {
   const { place, status, data } = weather;
   const temp = status === 'ready' ? `${data.tempC} °C` : status === 'loading' ? '…' : '– °C';
   return (
-    <header className="flex justify-between items-center pt-5 px-5 wide:pt-7 wide:px-12">
+    <header className="flex justify-between items-center pt-5 px-5 short:pt-2.5 wide:pt-7 wide:px-12">
       <span className="font-mono text-[14px] font-bold tracking-[0.22em]" title={`Weergave: ${mode}. Wissel met ?view=svg of ?view=3d`}>RANGY</span>
       <div className="flex gap-2 items-center">
         <button
@@ -19,7 +19,7 @@ export default function Topbar({ weather, onPlace, onInfo, mode }) {
           {place.kind === 'geo' ? <IconPin /> : <IconCloud />}
           {place.name.toUpperCase()} · {temp}
         </button>
-        <button type="button" className={roundBtn} onClick={onInfo} aria-label="Waarom minder in de winter?">
+        <button type="button" className={roundBtn} onClick={onInfo} aria-label="Uitleg">
           <IconInfo />
         </button>
       </div>

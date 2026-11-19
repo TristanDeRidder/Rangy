@@ -22,12 +22,12 @@ function markSeen() {
 
 /**
  * Welkom bij het eerste bezoek: welke wagen Rangy gebruikt en dat het een schatting is.
- * Ook later te openen via de regel met de referentiewagen onder het resultaat.
+ * "Hoe rekent Rangy?" opent de Uitleg; de referentiewagen staat ook in de Uitleg.
  *  - gsm: paneel dat onderaan binnenschuift
  *  - laptop: kaart in het midden
  * Gebouwd op <dialog> met showModal(): focus blijft erin, Escape sluit.
  */
-export default function WelcomeDialog({ open, onClose }) {
+export default function WelcomeDialog({ open, onClose, onMore }) {
   const ref = useRef(null);
   const okRef = useRef(null);
 
@@ -63,7 +63,17 @@ export default function WelcomeDialog({ open, onClose }) {
           Rangy rekent met één referentiewagen: een Tesla Model Y Standard RWD met 60 kWh bruikbare batterij. Jouw wagen,
           je rijstijl en het weer kunnen het echte bereik doen afwijken. Daarom toont Rangy een marge in plaats van één getal.
         </p>
-        <button ref={okRef} type="button" className={`${btnPrimary} justify-center mt-2`} onClick={close}>
+        <button
+          type="button"
+          className="self-start min-h-11 font-mono text-[12px] font-semibold tracking-[0.08em] underline underline-offset-3"
+          onClick={() => {
+            markSeen();
+            onMore();
+          }}
+        >
+          HOE REKENT RANGY? →
+        </button>
+        <button ref={okRef} type="button" className={`${btnPrimary} justify-center`} onClick={close}>
           BEGREPEN
         </button>
       </div>

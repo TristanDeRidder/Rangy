@@ -1,5 +1,6 @@
 import Slider from './Slider.jsx';
 import Stepper from './Stepper.jsx';
+import { HintButton } from './HintDialog.jsx';
 import { IconChevronDown, IconChevronUp } from './icons.jsx';
 import { card, eyebrow, mono } from './cls.js';
 import { TERRAIN, KG_PER_PASSENGER, KG_PER_BAG, MAX_PASSENGERS, MAX_BAGS } from '../scenario/buildScene.js';
@@ -23,12 +24,16 @@ export function summaryOf(scene) {
   return parts.join(' · ');
 }
 
-function Fields({ scene, setTripType, setSpeedKmh, setTempC, setTerrain, setPassengers, setBags, todayC }) {
+function Fields({ scene, setTripType, setSpeedKmh, setTempC, setTerrain, setPassengers, setBags, todayC, onHint }) {
+  const hint = (topic) => onHint && <HintButton topic={topic} onHint={onHint} />;
   const { tripType, speedKmh, tempC, terrain = 'vlak', passengers = 0, bags = 0 } = scene.inputs;
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <p id="bereik-label" className={fieldLabel}>BEREIK TONEN VOOR</p>
+        <div className="flex items-center gap-1.5">
+          <p id="bereik-label" className={fieldLabel}>BEREIK TONEN VOOR</p>
+          {hint('stad-snelweg')}
+        </div>
         <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="bereik-label">
           {['stad', 'snelweg'].map((t) => (
             <button key={t} type="button" className={choice} aria-pressed={tripType === t} onClick={() => setTripType(t)}>
@@ -39,8 +44,11 @@ function Fields({ scene, setTripType, setSpeedKmh, setTempC, setTerrain, setPass
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between">
-          <p id="terrein-label" className={fieldLabel}>TERREIN</p>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-1.5">
+            <p id="terrein-label" className={fieldLabel}>TERREIN</p>
+            {hint('terrein')}
+          </div>
           <span className={fieldValue}>{TERRAIN[terrain].label.toUpperCase()}</span>
         </div>
         <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="terrein-label">
@@ -61,6 +69,7 @@ function Fields({ scene, setTripType, setSpeedKmh, setTempC, setTerrain, setPass
       <Slider
         id="snelheid"
         label="SNELHEID"
+        hint={hint('snelheid')}
         valueLabel={tripType === 'stad' ? 'STADSVERKEER' : `${speedKmh} KM/H`}
         min={70}
         max={130}
@@ -73,6 +82,7 @@ function Fields({ scene, setTripType, setSpeedKmh, setTempC, setTerrain, setPass
       <Slider
         id="temperatuur"
         label="TEMPERATUUR"
+        hint={hint('temperatuur')}
         valueLabel={`${tempC} °C${tempC === todayC ? ' · VANDAAG' : ''}`}
         min={-10}
         max={30}
@@ -83,8 +93,11 @@ function Fields({ scene, setTripType, setSpeedKmh, setTempC, setTerrain, setPass
       />
 
       <div className="flex flex-col gap-1">
-        <div className="flex justify-between">
-          <p className={fieldLabel}>LADING</p>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-1.5">
+            <p className={fieldLabel}>LADING</p>
+            {hint('lading')}
+          </div>
           <span className={fieldValue}>{scene.extraKg > 0 ? `+ ${scene.extraKg} KG` : 'GEEN'}</span>
         </div>
         <Stepper id="passagiers" label="PASSAGIERS" hint={`+${KG_PER_PASSENGER} KG PER PERSOON`} value={passengers} max={MAX_PASSENGERS} onChange={setPassengers} />

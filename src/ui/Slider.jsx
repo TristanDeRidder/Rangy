@@ -2,15 +2,19 @@
  * Slider in de stijl van het ontwerp: gevulde lijn tot het handvat, stippellijn erna.
  * Gebouwd op een echte <input type="range">, dus werkt met toetsenbord en schermlezer.
  * `marks` zijn klikbare labels onder de lijn (bv. seizoenen).
+ * `hint`: optionele "?"-knop naast het label.
  */
-export default function Slider({ id, label, valueLabel, min, max, step, value, onChange, disabled, ends, marks = [] }) {
+export default function Slider({ id, label, hint, valueLabel, min, max, step, value, onChange, disabled, ends, marks = [] }) {
   const frac = (value - min) / (max - min);
   // zelfde positie als het handvat: de duim (20 px) loopt niet tot de uiterste rand
   const at = (v) => `calc(10px + (100% - 20px) * ${(v - min) / (max - min)})`;
   return (
     <div className={`flex flex-col ${disabled ? 'opacity-45' : ''}`}>
-      <div className="flex justify-between font-mono text-[12px] tracking-[0.08em]">
-        <label htmlFor={id}>{label}</label>
+      <div className="flex justify-between items-center font-mono text-[12px] tracking-[0.08em]">
+        <span className="flex items-center gap-1.5">
+          <label htmlFor={id}>{label}</label>
+          {hint}
+        </span>
         <span className="font-semibold text-[13px]">{valueLabel}</span>
       </div>
       <div className="relative h-7" style={{ '--f': frac }}>

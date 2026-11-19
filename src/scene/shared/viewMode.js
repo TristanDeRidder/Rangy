@@ -4,7 +4,7 @@
  *  - anders: SVG wanneer het toestel geen WebGL heeft
  *  - anders: de standaard (DEFAULT_VIEW). Schrap je later 3D, zet dit dan op 'svg'.
  */
-export const DEFAULT_VIEW = '3d';
+export const DEFAULT_VIEW = 'svg';
 
 export function supportsWebGL() {
   try {
