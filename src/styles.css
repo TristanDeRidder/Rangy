@@ -29,6 +29,9 @@
   --breakpoint-wide: 900px;
 }
 
+/* lage gsm-schermen: compacter resultaat, zodat de baan groot genoeg blijft (laptop valt erbuiten) */
+@custom-variant short (@media (max-width: 899.98px) and (max-height: 700px));
+
 @layer base {
   html { line-height: normal; }
   html, body, #root { min-height: 100%; }
