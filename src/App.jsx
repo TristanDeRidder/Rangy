@@ -121,7 +121,7 @@ export default function App() {
             {/* vult de ruimte tussen resultaat en omstandigheden: scène in het midden = gelijke afstand erboven en eronder.
                 Size-container: de baan schaalt mee met de hoogte die overblijft (zie sceneBox in cls.js).
                 Ruimte bovenaan: de labels van verre ritten steken boven de baan uit. */}
-            <div className="flex-1 min-h-0 flex flex-col justify-center w-full pt-9 pb-3 short:pt-8 short:pb-1.5 [container-type:size]">
+            <div className="flex-1 min-h-0 flex flex-col justify-center w-full pt-9 pb-3 short:pt-8 short:pb-1.5 @container-size">
               <RoadScene scene={scene} mode={mode} />
             </div>
             <div
