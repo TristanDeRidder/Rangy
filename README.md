@@ -114,6 +114,9 @@ scenario/
   legacy.js   tijdelijke brug naar de interface van v1 (stad/snelweg in Mijn ritten); weg met de nieuwe schermen.
   explain.js  cijfers voor de Uitleg-pagina op het model v2: snelheid, soort weg, lading, wind, opwarmen, reserve
               (terrein nog met het model van v1, als uitleg waarom het niet instelbaar is).
+  route/      routes van gemeente naar gemeente via GraphHopper (proxy /api/route, sleutel GRAPHHOPPER_KEY):
+              municipalities.json = 565 gemeenten met middelpunt (BOSA BeST Address, CC BY 4.0),
+              segments.js = route → stukken (soort weg, km, rijrichting, limiet), routeApi.js = de oproep.
   useScenario geeft `plan` (v2) en `scene` (v1) terug, plus addTrip/updateTrip/removeTrip/clearTrips en setSituation.
   plan.js     buildPlan(): eigen mix → groot getal, per dag verbruik en status, drukste dag,
               week zonder dagelijks laden (eigen laaddagen of voorstel van Rangy, extra laadbeurten),
@@ -137,7 +140,12 @@ scenario/
 | Rugwind, slechtste geval | 35 % van het natuurkundige effect | gekalibreerd op ABRP: 10 m/s rugwind = −6 % |
 | Rugwind, beste geval | volledig natuurkundig effect (−16,5 % bij 10 m/s) | eigen berekening |
 | Wind zonder route | gemiddelde over alle windrichtingen | eigen aanname |
-| `wind_degrees` (API Ninjas) | richting waar de wind vandaan komt, 0° = noord | eigen aanname, nog na te gaan |
+| Route | van middelpunt tot middelpunt van de gemeenten (gemiddelde van de adrescoördinaten) | eigen aanname |
+| Soort weg uit de route | motorway = snelweg; limiet ≥ 70 = expresweg met die limiet; zonder limiet trunk = 90, primary/secondary = 70; rest = bebouwde kom | eigen aanname |
+| Stukken route | gesplitst bij meer dan 30° draaien of na 5 km (voor de wind) | rekenkeuze |
+| Snelweg met route | rekent met de ingestelde snelheid, niet met de limiet uit de route | ontwerpkeuze |
+| Terugrit met route | dezelfde stukken in omgekeerde richting | eigen aanname |
+| `wind_degrees` (API Ninjas) | richting waar de wind vandaan komt, 0° = noord | nagegaan op 25-11-2026: API 95°, windy.com tegelijk oostenwind (pijl naar het westen) |
 | Wind over de week | de wind van vandaag geldt voor alle dagen (zoals de temperatuur) | ontwerpkeuze |
 | Opwarmen per koude start | 860 Wh bij −1 °C, 0 bij 21 °C, lineair (± 39 Wh/°C); onder −1 °C doorgetrokken | berekend uit INL; doortrekken eigen aanname |
 | Opwarmen, beste geval | 38 % minder (warmtepomp) | DOE/Argonne; toepassing op de Model Y eigen aanname |

@@ -50,7 +50,7 @@ export async function fetchWeather({ lat, lon }, signal) {
  * @property {number} cloudPct    procent
  * @property {number} windKmh
  * @property {number | null} windMs     windsnelheid op 10 m (m/s), voor het rekenmodel
- * @property {number | null} windDeg    windrichting in graden; aangenomen: waar de wind vandaan komt (0 = noord)
+ * @property {number | null} windDeg    windrichting in graden: waar de wind vandaan komt (0 = noord), nagegaan met windy.com
  * @property {string} description bv. "broken clouds"
  * @property {string} condition   bv. "Clouds", "Rain", "Snow"
  * @property {boolean} isDay

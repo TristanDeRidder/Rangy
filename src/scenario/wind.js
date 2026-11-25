@@ -39,7 +39,7 @@ const rad = (deg) => (deg * Math.PI) / 180;
  * Wind uit het weerbericht opschonen.
  * @param {{ speedMs?: number, fromDeg?: number } | null | undefined} w
  *        speedMs  windsnelheid op 10 m (m/s), zoals `wind_speed` van API Ninjas
- *        fromDeg  richting waar de wind vandaan komt, 0 = noord, 90 = oost [eigen aanname over `wind_degrees`]
+ *        fromDeg  richting waar de wind vandaan komt, 0 = noord, 90 = oost (zoals `wind_degrees`, nagegaan)
  * @returns {{ speedMs: number, fromDeg: number } | null}  null = geen wind
  */
 export function normalizeWind(w) {

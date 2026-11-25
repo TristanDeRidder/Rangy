@@ -60,8 +60,8 @@ export {};
  * @property {RouteSegment[]|null} segments  route in stukken (heenrit), of null zonder route
  * @property {{ passengers: number, bags: number }} load  lading voor deze rit
  *
- * @typedef {{ road: 'kom'|'expres'|'snel', km: number, bearingDeg: number|null }} RouteSegment
- *           bearingDeg = rijrichting, 0 = noord, 90 = oost
+ * @typedef {{ road: 'kom'|'expres'|'snel', km: number, bearingDeg: number|null, limitKmh: number|null }} RouteSegment
+ *           bearingDeg = rijrichting, 0 = noord, 90 = oost; limitKmh = snelheidslimiet uit de route (expresweg)
  *
  * @typedef {{ speedMs: number, fromDeg: number }} Wind  op 10 m hoogte, fromDeg = waar de wind vandaan komt
  *

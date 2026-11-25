@@ -93,21 +93,26 @@ function roadWhPerKm(road, variant, c, bearingDeg, kase) {
  * Energie voor een reeks stukken weg, in het slechtste en beste geval.
  * Slechtste geval: minst zuinige variant, expresweg 3 km/u boven de limiet, rugwind helpt beperkt.
  * Beste geval: zuinigste variant, expresweg 3 km/u onder de limiet, rugwind volgens de natuurkunde.
- * @param {{ road: 'kom'|'expres'|'snel', km: number, bearingDeg?: number|null }[]} parts
+ * Een stuk route kan een eigen limiet hebben (`limitKmh`, uit de route); anders geldt `cond.expresLimitKmh`
+ * of de standaardlimiet. De limiet geldt alleen voor de expresweg: de snelweg rekent met de ingestelde snelheid.
+ * @param {{ road: 'kom'|'expres'|'snel', km: number, bearingDeg?: number|null, limitKmh?: number|null }[]} parts
  * @param {{ speedKmh: number, tempC: number, extraKg?: number, expresLimitKmh?: number, wind?: object|null }} cond
  * @returns {{ worst: {wh:number, capWh:number}, best: {wh:number, capWh:number} }}  wh = voor alle km samen
  */
 function partsEnergy(parts, cond) {
-  const limit = cond.expresLimitKmh ?? EXPRES_LIMIT_KMH;
-  const run = (variant, expresKmh, kase) => {
-    const c = { ...cond, expresKmh };
-    const wh = parts.reduce((s, p) => s + (p.km ? p.km * roadWhPerKm(p.road, variant, c, p.bearingDeg, kase) : 0), 0);
+  const fallback = cond.expresLimitKmh ?? EXPRES_LIMIT_KMH;
+  const run = (variant, tolerance, kase) => {
+    const wh = parts.reduce((s, p) => {
+      if (!p.km) return s;
+      const c = { ...cond, expresKmh: (p.limitKmh ?? fallback) + tolerance };
+      return s + p.km * roadWhPerKm(p.road, variant, c, p.bearingDeg, kase);
+    }, 0);
     const capWh = variant.veh.usableKWh * 1000 * capacityFactor(cond.tempC, variant.veh);
     return { wh, capWh };
   };
   const share = (x) => x.wh / x.capWh;
-  const hi = VARIANTS.map((v) => run(v, limit + SPEED_TOLERANCE_KMH, 'worst'));
-  const lo = VARIANTS.map((v) => run(v, limit - SPEED_TOLERANCE_KMH, 'best'));
+  const hi = VARIANTS.map((v) => run(v, SPEED_TOLERANCE_KMH, 'worst'));
+  const lo = VARIANTS.map((v) => run(v, -SPEED_TOLERANCE_KMH, 'best'));
   const worst = hi.reduce((a, b) => (share(b) > share(a) ? b : a));
   const best = lo.reduce((a, b) => (share(b) < share(a) ? b : a));
   return { worst, best };

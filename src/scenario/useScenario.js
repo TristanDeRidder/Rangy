@@ -1,9 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { buildPlan } from './plan.js';
 import { buildScene } from './buildScene.js';
 import { PRESETS, normalizeTrip, normalizeSituation } from './trips.js';
 import { loadTrips, saveTrips, loadSituation, saveSituation } from './storage.js';
 import { toLegacyTrip, fromLegacyTrips } from './legacy.js';
+import { municipalityByNis } from '../route/municipalities.js';
+import { fetchRoute } from '../route/routeApi.js';
 
 /** Starttemperatuur van de slider, tot het echte weer binnen is (zie weather/useWeather.js). */
 export const TODAY = { tempC: 8 };
@@ -80,6 +82,48 @@ export function useScenario(initial = {}) {
     });
   }, []);
 
+  // laatste ritten en situatie, voor de route-functies (die lopen async, na een render)
+  const latest = useRef({ trips, situation });
+  latest.current = { trips, situation };
+
+  /**
+   * Route van de thuisgemeente naar een bestemming (NIS-code van de gemeente) voor één rit.
+   * Afstand en mix komen dan uit de route. Lukt het niet, dan blijft de rit zoals hij was.
+   * @returns {Promise<{ ok: true } | { ok: false, error: string }>}
+   */
+  const routeTrip = useCallback(
+    async (id, destNis, signal) => {
+      try {
+        const home = municipalityByNis(latest.current.situation.home);
+        const dest = municipalityByNis(destNis);
+        if (!home) throw new Error('Kies eerst je thuisgemeente bij Jouw situatie.');
+        if (!dest) throw new Error('Onbekende gemeente.');
+        const { segments } = await fetchRoute(home, dest, signal);
+        updateTrip(id, { dest: dest.nis, segments });
+        return { ok: true };
+      } catch (err) {
+        if (err.name === 'AbortError') throw err;
+        return { ok: false, error: err.message };
+      }
+    },
+    [updateTrip],
+  );
+
+  /**
+   * Thuisgemeente kiezen. Ritten met een bestemming krijgen een nieuwe route vanaf de nieuwe gemeente.
+   * @returns {Promise<{ id: string, ok: boolean, error?: string }[]>}  uitkomst per herberekende rit
+   */
+  const setHome = useCallback(
+    async (nis) => {
+      setSituation({ home: municipalityByNis(nis)?.nis ?? null });
+      latest.current.situation = { ...latest.current.situation, home: municipalityByNis(nis)?.nis ?? null };
+      const withDest = latest.current.trips.filter((t) => t.dest != null);
+      const results = await Promise.all(withDest.map((t) => routeTrip(t.id, t.dest)));
+      return results.map((r, i) => ({ id: withDest[i].id, ...r }));
+    },
+    [setSituation, routeTrip],
+  );
+
   /** Ritten uit de huidige Mijn ritten (formaat v1). */
   const setLegacyTrips = useCallback((list) => setTrips((cur) => fromLegacyTrips(list, cur)), [setTrips]);
 
@@ -107,6 +151,8 @@ export function useScenario(initial = {}) {
     removeTrip,
     clearTrips,
     setSituation,
+    setHome,
+    routeTrip,
     setWind,
     controls,
     // interface v1, verdwijnt met de nieuwe schermen

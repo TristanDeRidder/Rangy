@@ -6,7 +6,7 @@
  *  - roundTrip  heen en terug op dezelfde dag (standaard ja)
  *  - days       weekdagen waarop je de rit maakt, 0 = maandag … 6 = zondag. Leeg = af en toe.
  *  - mix        aandeel bebouwde kom / expresweg / snelweg (uit de route, of een standaardmix)
- *  - dest       bestemming (gemeente) of null als de afstand zelf ingegeven is
+ *  - dest       bestemming (NIS-code van de gemeente) of null als de afstand zelf ingegeven is
  *  - segments   route in stukken (heenrit): soort weg, km en rijrichting; null zonder route.
  *               Met een route komen km en mix uit de stukken.
  *  - load       lading voor deze rit, bovenop de bestuurder
@@ -48,10 +48,16 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 export const cleanDays = (days) =>
   [...new Set((days ?? []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b);
 
+/** NIS-code van een gemeente (positief geheel getal) of null. */
+const toNis = (v) => {
+  const n = Number(v);
+  return v != null && v !== '' && Number.isInteger(n) && n > 0 ? n : null;
+};
+
 const cleanBearing = (deg) => (deg == null || !Number.isFinite(Number(deg)) ? null : ((Number(deg) % 360) + 360) % 360);
 const kmOn = (segments, road) => segments.filter((g) => g.road === road).reduce((s, g) => s + g.km, 0);
 
-/** Route-stukken opschonen: geldige soort weg, km > 0, rijrichting 0–360° of null. */
+/** Route-stukken opschonen: geldige soort weg, km > 0, rijrichting 0–360° of null, limiet (km/u) of null. */
 function cleanSegments(segments) {
   if (!Array.isArray(segments)) return null;
   const clean = segments
@@ -60,6 +66,7 @@ function cleanSegments(segments) {
       road: g.road,
       km: Number(g.km),
       bearingDeg: cleanBearing(g.bearingDeg),
+      limitKmh: Number(g.limitKmh) > 0 ? Number(g.limitKmh) : null,
     }));
   return clean.length ? clean : null;
 }
@@ -81,7 +88,7 @@ export function normalizeTrip(t) {
     roundTrip: t.roundTrip ?? true,
     days,
     mix: normalizeMix(fromRoute ? fromRoute.mix : (t.mix ?? DEFAULT_MIX)),
-    dest: t.dest ?? null,
+    dest: toNis(t.dest), // NIS-code van de bestemming
     segments,
     load: { passengers: Math.max(0, t.load?.passengers ?? 0), bags: Math.max(0, t.load?.bags ?? 0) },
   };
@@ -120,7 +127,7 @@ export function normalizeSituation(s = {}) {
   const charging = ['ja', 'nee', 'onbekend'].includes(s.charging) ? s.charging : DEFAULT_SITUATION.charging;
   const home = charging === 'ja';
   return {
-    home: s.home ?? null,
+    home: toNis(s.home), // NIS-code van de gemeente
     charging,
     // met een thuislader laad je elke dag: laaddagen kiezen heeft dan geen zin
     chargeDays: home ? [] : cleanDays(s.chargeDays),
