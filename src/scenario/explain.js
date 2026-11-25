@@ -2,11 +2,12 @@
  * Cijfers voor de Uitleg-pagina. Telkens één factor veranderen, de rest gelijk houden:
  * 20 °C, geen lading, geen wind, snelweg 110 km/u. Pure functies op het rekenmodel v2 (eigen berekening).
  *
- * De functies voor de huidige Uitleg-pagina (speedRows, cityVsHighway, loadRows, terrainRows, carFacts)
- * geven nog dezelfde vorm terug; de nieuwe onderwerpen gebruiken roadRows, windRows, warmupRows en reserveFacts.
+ * Per onderwerp: speedRows (Snelheid), roadRows (Soort weg), loadRows (Lading), terrainRows (Terrein),
+ * windRows (Wind), warmupRows (Laden en voorverwarmen), carFacts (Referentiewagen).
+ * Wat van de keuzes van de gebruiker afhangt (bereik, drukste dag), komt rechtstreeks uit het plan.
  */
-import { mixRange, routeShare, RESERVE, ROADS } from './roads.js';
-import { rangeBand, extraKgOf } from './buildScene.js';
+import { mixRange, routeShare, ROADS } from './roads.js';
+import { rangeBand, extraKgOf } from './vehicle.js';
 import { tripShare } from './plan.js';
 import { normalizeTrip } from './trips.js';
 import { warmupWh } from './warmup.js';
@@ -27,15 +28,6 @@ export function speedRows(speeds = [90, 110, 130]) {
 /** Elke soort weg (bebouwde kom, expresweg, snelweg), bij een zachte en een koude dag. */
 export function roadRows(temps = [20, -5]) {
   return temps.map((tempC) => ({ tempC, ...Object.fromEntries(ROADS.map((r) => [r, range({ [r]: 1 }, { tempC })])) }));
-}
-
-/** Stad (bebouwde kom) tegenover snelweg, bij een zachte en een koude dag. Vorm van de huidige Uitleg. */
-export function cityVsHighway(temps = [20, -5], speedKmh = BASE.speedKmh) {
-  return temps.map((tempC) => ({
-    tempC,
-    stad: range(KOM, { tempC }),
-    snelweg: range(SNEL, { tempC, speedKmh }),
-  }));
 }
 
 /** Volle wagen tegenover alleen de bestuurder, in de bebouwde kom en op de snelweg. */
@@ -113,12 +105,6 @@ export function warmupRows(temps = [15, 5, -5], trip = { km: 4, mix: KOM }) {
     opwarmen: share(tempC, true, false),
     voorverwarmd: share(tempC, true, true),
   }));
-}
-
-/** Zeker haalbaar met reserve tegenover het zekere bereik, op de snelweg bij 20 °C. */
-export function reserveFacts() {
-  const r = range(SNEL);
-  return { reservePct: RESERVE * 100, low: r.low, safe: r.safe, high: r.high };
 }
 
 /** Kerncijfers van de referentiewagen bij 20 °C. */

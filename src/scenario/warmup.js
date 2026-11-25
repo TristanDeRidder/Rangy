@@ -25,7 +25,7 @@
  * Uitzetten: WARMUP_ENABLED = false, of `useWarmup: false` meegeven aan buildPlan.
  */
 import { capacityFactor } from '../model/model.js';
-import { VEH_LIT, VEH_EVDB } from './buildScene.js';
+import { VEH_LIT, VEH_EVDB } from './vehicle.js';
 
 /** Opwarmen meerekenen in het model (schakelaar voor de hele app). */
 export const WARMUP_ENABLED = true;

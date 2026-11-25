@@ -5,7 +5,7 @@
  */
 import { rangeKm, simulateCycle, capacityFactor } from '../model/model.js';
 import wltc from '../model/wltc-class3b.json';
-import { VEH_LIT, VEH_EVDB } from './buildScene.js';
+import { VEH_LIT, VEH_EVDB } from './vehicle.js';
 
 const CITY = wltc.kmh.slice(0, wltc.phases.medium[1] + 1);
 

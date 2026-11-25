@@ -1,9 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { buildPlan } from './plan.js';
-import { buildScene } from './buildScene.js';
 import { PRESETS, normalizeTrip, normalizeSituation } from './trips.js';
 import { loadTrips, saveTrips, loadSituation, saveSituation } from './storage.js';
-import { toLegacyTrip } from './legacy.js';
 import { municipalityByNis } from '../route/municipalities.js';
 import { fetchRoute } from '../route/routeApi.js';
 
@@ -24,7 +22,6 @@ const storage = () => {
 /**
  * Houdt de keuzes van de gebruiker bij en geeft terug wat de schermen nodig hebben.
  *  - plan: het rekenmodel v2 (buildPlan): eigen mix, dagen, drukste dag, week, ritten die af en toe terugkomen
- *  - scene: de scène van v1 (buildScene) voor de huidige interface; verdwijnt met de nieuwe schermen
  * Ritten en "Jouw situatie" blijven op het toestel (localStorage), zonder account of server.
  */
 export function useScenario(initial = {}) {
@@ -114,17 +111,9 @@ export function useScenario(initial = {}) {
     [setSituation, routeTrip],
   );
 
-
   const plan = useMemo(
     () => buildPlan({ speedKmh, tempC, wind, trips, situation }),
     [speedKmh, tempC, wind, trips, situation],
-  );
-
-  const legacyTrips = useMemo(() => trips.map(toLegacyTrip), [trips]);
-  // v1 (Mijn ritten, Uitleg): snelweg, vlak, zonder lading; verdwijnt met de nieuwe schermen
-  const scene = useMemo(
-    () => buildScene({ tripType: 'snelweg', speedKmh, tempC, terrain: 'vlak', passengers: 0, bags: 0, trips: legacyTrips }),
-    [speedKmh, tempC, legacyTrips],
   );
 
   // omstandigheden (zie Controls): snelheid op de snelweg en temperatuur; de wind komt uit het weer (setWind)
@@ -144,7 +133,5 @@ export function useScenario(initial = {}) {
     routeTrip,
     setWind,
     controls,
-    // v1, nog voor de Uitleg; verdwijnt in de volgende stap
-    scene,
   };
 }

@@ -11,7 +11,7 @@ import { mixRange, batteryShare, routeShare, shareStatus, weightedMix, RESERVE }
 import { WIND_ENABLED, normalizeWind } from './wind.js';
 import { WARMUP_ENABLED, warmupShare } from './warmup.js';
 import { DAYS, DEFAULT_MIX, normalizeTrip, normalizeSituation, tripDistance, isWeekly } from './trips.js';
-import { extraKgOf } from './buildScene.js';
+import { extraKgOf } from './vehicle.js';
 import { scaleMaxKm, toT } from '../scene/shared/projection.js';
 
 /** Laden zonder thuislader: van 10 % tot 90 % per laadbeurt [eigen aanname]. */

@@ -42,11 +42,11 @@ function Index({ onTopic }) {
  * Inhoud van het Uitleg-paneel: het overzicht, of één onderwerp.
  * Titel, terugknop en sluiten regelt het Panel in App.jsx.
  */
-export default function ExplainPanel({ topic, onTopic, scene }) {
+export default function ExplainPanel({ topic, onTopic, plan }) {
   const t = topic && topicById(topic);
   if (!t) return <Index onTopic={onTopic} />;
   const { Body } = t;
-  return <Body scene={scene} />;
+  return <Body plan={plan} />;
 }
 
 export { topicById };

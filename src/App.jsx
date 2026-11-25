@@ -53,8 +53,8 @@ function useMediaQuery(query) {
 }
 
 export default function App() {
-  // plan = rekenmodel v2 (resultaat, baan, week, Mijn ritten); scene = v1, nog voor de Uitleg
-  const { scene, plan, trips, situation, controls: setters, setWind, ...actions } = useScenario();
+  // plan = het rekenmodel (resultaat, baan, week, Mijn ritten, Uitleg)
+  const { plan, trips, situation, controls: setters, setWind, ...actions } = useScenario();
   const { setTempC } = setters;
   const wide = useMediaQuery(WIDE);
   const [view, setView] = useState('overview'); // 'overview' | 'trips' | 'explain'
@@ -226,7 +226,7 @@ export default function App() {
         page={topic}
         wide={wide}
       >
-        <ExplainPanel topic={topic} onTopic={setTopic} scene={scene} />
+        <ExplainPanel topic={topic} onTopic={setTopic} plan={plan} />
       </Panel>
     </div>
   );

@@ -15,7 +15,7 @@
 import { simulateCycle, consumptionWhPerKm, capacityFactor } from '../model/model.js';
 import calibrated from '../model/calibrated-vehicle.json';
 import wltc from '../model/wltc-class3b.json';
-import { VEH_LIT, VEH_EVDB } from './buildScene.js';
+import { VEH_LIT, VEH_EVDB } from './vehicle.js';
 import { relativeWind, atVehicle, averageOverDirections } from './wind.js';
 
 const BAND = calibrated.bandFactor;

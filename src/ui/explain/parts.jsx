@@ -3,6 +3,8 @@ import { COLORS, STATUS_COLOR } from '../../scene/shared/theme.js';
 import { eyebrow, mono } from '../cls.js';
 
 export const r10 = (km) => Math.round(km / 10) * 10;
+/** Temperatuur met een echt minteken (bv. "−5 °C"). */
+export const degC = (t) => `${t < 0 ? '−' : ''}${Math.abs(t)} °C`;
 export const span = ({ low, high }) => (r10(low) === r10(high) ? `± ${r10(low)}` : `${r10(low)}–${r10(high)}`);
 
 /** Gewone alinea. */
@@ -20,9 +22,10 @@ export const Note = ({ children }) => <p className="text-[12.5px] leading-[18px]
 /**
  * Bereik als balken, op dezelfde schaal: groen tot het zekere bereik, geel tot het mogelijke.
  * @param {{ label: string, band: {low:number, high:number} }[]} rows
+ * @param {number} [max]  zelfde schaal over meerdere grafieken (standaard: de langste balk)
  */
-export function RangeBars({ rows, caption }) {
-  const max = Math.max(...rows.map((r) => r.band.high));
+export function RangeBars({ rows, caption, max: fixedMax }) {
+  const max = fixedMax ?? Math.max(...rows.map((r) => r.band.high));
   const pct = (km) => `${(km / max) * 100}%`;
   return (
     <figure className="flex flex-col gap-3">
@@ -38,6 +41,42 @@ export function RangeBars({ rows, caption }) {
           </div>
         </div>
       ))}
+      {caption && <figcaption className={eyebrow}>{caption}</figcaption>}
+    </figure>
+  );
+}
+
+/** Deel van een volle batterij als percent, met één decimaal (bv. "4,6 %"). */
+export const pct1 = (x) => `${(x * 100).toLocaleString('nl-BE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+
+/**
+ * Kleine tabel: eerste kolom als label, de rest als waarden.
+ * @param {{ head: string[], rows: string[][], caption?: string }} props
+ */
+export function Table({ head, rows, caption }) {
+  return (
+    <figure className="flex flex-col gap-2">
+      <table className="w-full border-collapse font-mono text-[12px] tracking-[0.04em]">
+        <thead>
+          <tr className="border-b border-ink">
+            {head.map((h, i) => (
+              <th key={h} scope="col" className={`py-2 font-medium text-[11px] text-muted ${i ? 'text-right' : 'text-left'}`}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([label, ...cells]) => (
+            <tr key={label} className="border-b border-line last:border-b-0">
+              <th scope="row" className="py-2.5 text-left font-semibold">{label}</th>
+              {cells.map((c, i) => (
+                <td key={i} className="py-2.5 text-right font-semibold">{c}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
       {caption && <figcaption className={eyebrow}>{caption}</figcaption>}
     </figure>
   );

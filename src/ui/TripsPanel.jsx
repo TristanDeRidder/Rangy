@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import { STATUS_COLOR, STATUS_LABEL } from '../scene/shared/theme.js';
 import { DAYS } from '../scenario/trips.js';
-import { KG_PER_PASSENGER, KG_PER_BAG, MAX_PASSENGERS, MAX_BAGS, extraKgOf } from '../scenario/buildScene.js';
+import { KG_PER_PASSENGER, KG_PER_BAG, MAX_PASSENGERS, MAX_BAGS, extraKgOf } from '../scenario/vehicle.js';
 import { municipalityByNis } from '../route/municipalities.js';
 import PlaceSearch from './PlaceSearch.jsx';
 import DayChips from './DayChips.jsx';

@@ -1,120 +1,110 @@
 # Rangy
 
-Mobiele webtool die toont welke van je eigen ritten een EV aankan, en hoe snelheid, temperatuur, terrein en lading dat veranderen.
-De baan is een SVG; 3D is weggelaten (zie de motivatie in het dossier).
+Mobiele webtool die toont welke van je eigen ritten een EV aankan: per rit, op je drukste dag en over een hele week,
+met de temperatuur en de wind van vandaag. De baan is een SVG; 3D is weggelaten (zie de motivatie in het dossier).
 
 ## Starten
 
 ```bash
 npm install
 npm run dev        # ontwikkelserver; ook bereikbaar op je gsm via het netwerkadres dat Vite toont
-npm test           # controleert het rekenmodel en de scène
+npm test           # controleert het rekenmodel
 npm run build      # productieversie in dist/
 ```
+
+Sleutels staan in `.env` (zie `.env.example`): `API_NINJAS_KEY` voor het weer, `GRAPHHOPPER_KEY` voor routes.
+De Vite-proxy (`/api/weather`, `/api/route`) voegt ze toe op de server; ze komen nooit in de browser.
 
 ## Opbouw
 
 ```
 src/
-  model/                 rekenmodel (ongewijzigd uit het onderzoek)
+  model/                 natuurkundig rekenmodel (uit het onderzoek), met de wind erbij
     model.js
     calibrated-vehicle.json
     wltc-class3b.json
   scenario/
-    types.js             het contract: hoe een "scène" eruitziet
-    buildScene.js        rekenmodel → scène (pure functie)
-    buildScene.test.js   tests op de gevalideerde waarden
-    useScenario.js       keuzes van de gebruiker + ritten in localStorage
+    plan.js              buildPlan(): ritten + omstandigheden + situatie → alles wat de schermen tonen
+    roads.js             soorten weg (bebouwde kom, expresweg, snelweg), bereik, batterijdeel, reserve, status
+    trips.js             ritformaat, "Jouw situatie", voorbeeldritten
+    wind.js              wind uit het weerbericht → tegen- en zijwind bij de wagen
+    warmup.js            opwarmen bij een koude start, voorverwarmen aan de thuislader
+    vehicle.js           referentiewagen (twee varianten), lading, terrein (alleen voor de Uitleg)
     winter.js            uitleg temperatuur: verlies door kou vs. verwarming
     explain.js           cijfers voor de Uitleg: telkens één factor veranderen
+    storage.js           ritten en situatie in localStorage (rangy.v2.*); ritten uit v1 worden omgezet
+    useScenario.js       state van de app: ritten, situatie, snelheid, temperatuur, wind → plan
+    types.js             vorm van het plan (JSDoc)
+  route/
+    municipalities.json  565 gemeenten met middelpunt (BOSA BeST Address, CC BY 4.0)
+    municipalities.js    zoeken op naam, opzoeken op NIS-code
+    segments.js          route → stukken (soort weg, km, rijrichting, limiet)
+    routeApi.js          oproep naar /api/route (GraphHopper), met cache
+  weather/               weer van vandaag via /api/weather (API Ninjas), stad of ruwe locatie
   scene/
     RoadScene.jsx        de baan
     shared/
-      projection.js      één schaal voor afstanden (t = 0 bij de auto, 1 aan het einde)
+      projection.js      één schaal voor afstanden (t = 0 bij de wagen, 1 aan het einde)
       theme.js           kleuren en statuslabels uit het ontwerp
-      Tag.jsx            label bij een rit (HTML boven de baan)
+      Tag.jsx            label bij een markering (HTML boven de baan)
     svg/RoadSceneSVG.jsx
   ui/
     Topbar.jsx           merknaam, weer, info-knop (opent de Uitleg)
     Result.jsx           het grote getal en de marge
-    Controls.jsx         omstandigheden: bereik voor stad/snelweg, terrein, snelheid, temperatuur, lading
-    Slider.jsx           slider in de stijl van het ontwerp, op een echte input[type=range]
-    Stepper.jsx          teller − / + (lading)
-    WelcomeDialog.jsx    welkom bij het eerste bezoek: referentiewagen en disclaimer
+    Tabs.jsx             Baan / Week (gsm), veegbaar
+    WeekCard.jsx         de week: verbruik per dag, of batterijniveau en laaddagen
+    Controls.jsx         omstandigheden: snelheid op de snelweg, temperatuur, wind (uit het weer)
+    TripsPanel.jsx       Mijn ritten: Jouw situatie, ritten met bestemming, dagen, lading
+    WelcomeDialog.jsx    welkom bij het eerste bezoek: thuisgemeente, laden, vaste ritten
+    PlaceSearch.jsx      gemeente zoeken (combobox)
+    DayChips.jsx         weekdagen kiezen
+    Switch.jsx, Slider.jsx, Stepper.jsx
     Panel.jsx            volledig scherm (gsm) of zijpaneel (laptop)
-    TripsPanel.jsx       mijn ritten: tijdlijn met grenzen van het bereik, stad/snelweg per rit
+    WeatherDialog.jsx    stad of locatie voor het weer
     WinterPanel.jsx      inhoud van Uitleg › Temperatuur, berekend met het model
     HintDialog.jsx       "?" naast een omstandigheid: korte uitleg (+ video) en link naar de Uitleg
     explain/
       topics.jsx         alle onderwerpen van de Uitleg: titel, korte tekst, video, pagina
       ExplainPanel.jsx   overzicht per groep, of één onderwerp
-      parts.jsx          bouwstenen: balken voor het bereik, tabel, statuslabels
+      parts.jsx          bouwstenen: balken voor het bereik, tabellen, statuslabels
 ```
 
 ```
-rekenmodel → buildScene() → scène ─┬─→ RoadSceneSVG
-                                   └─→ 2D-laag: Topbar, Result, Controls, panelen
+ritten + situatie + weer → buildPlan() → plan ─┬─→ RoadSceneSVG (baan)
+                                               ├─→ WeekCard (week)
+                                               └─→ Result, TripsPanel, Uitleg
 ```
 
 ## Afspraken
 
-1. **Geen rekenwerk in een weergave.** De baan leest alleen het `scene`-object. Zo toont ze nooit andere cijfers.
-2. **Tekst en getallen altijd in HTML.** De labels bij de ritten staan boven de SVG (`Tag.jsx`), geplaatst met percentages.
+1. **Geen rekenwerk in een weergave.** Schermen lezen alleen het `plan`-object. Zo tonen ze nooit andere cijfers.
+2. **Tekst en getallen altijd in HTML.** De labels bij de markeringen staan boven de SVG (`Tag.jsx`), geplaatst met percentages.
 3. **Eén schaal.** Een afstand wordt via `projection.js` een positie `t`, de SVG zet `t` om naar een y-positie in perspectief.
 
 ## Schermen
 
-- **Gsm (< 900 px):** overzicht met de omstandigheden achter een toggle; "Mijn ritten" en "Uitleg" schuiven als volledig scherm binnen (knop onderaan of info-knop).
-  Het overzicht is precies één schermhoogte (`h-dvh`): de baan schaalt mee met de ruimte tussen resultaat en dock, de labels schalen mee met de baan. Onder 700 px hoogte (`short:`) is het resultaat compacter.
-- **Laptop (≥ 900 px):** twee kolommen, omstandigheden altijd open; panelen schuiven rechts binnen en de baan verkleint ernaast.
-## Omstandigheden in het model
+- **Gsm (< 900 px):** resultaat bovenaan, daaronder de tabs Baan en Week; "Mijn ritten" en "Uitleg" schuiven als volledig scherm binnen.
+  Het overzicht is precies één schermhoogte (`h-dvh`). Onder 700 px hoogte (`short:`) is het resultaat compacter.
+- **Laptop (≥ 900 px):** drie kolommen; panelen schuiven rechts binnen.
 
-| Keuze | Hoe het model ermee rekent | Bron |
-| --- | --- | --- |
-| Stad of snelweg per rit | elke rit krijgt de status van zijn eigen type; de schakelaar op het overzicht kiest welk bereik de baan toont, ritten van het andere type staan gedimd | – |
-| Terrein | afwisselend evenveel km bergop als bergaf: vlak 0 %, glooiend ±3 %, heuvelachtig ±5 % | eigen aanname |
-| Passagiers | 75 kg per persoon, zelfde als de bestuurder in het model | Verordening (EU) 1230/2012 |
-| Bagage | 20 kg per stuk | eigen aanname |
-
-Ter controle (eigen berekening, snelweg 110 km/h, 8 °C, variant literatuur): vlak 381 km, glooiend 364 km, heuvelachtig 325 km.
-
-Het welkomstvenster verschijnt één keer (`rangy.welcome` in localStorage). De regel met de referentiewagen onder het resultaat opent Uitleg › Referentiewagen.
+Het welkomstvenster verschijnt één keer (`rangy.v2.welcome` in localStorage). De regel met de referentiewagen onder het resultaat opent Uitleg › Referentiewagen.
 
 ## Uitleg
 
-De info-knop opent het overzicht, met drie groepen: Basis (hoe werkt Rangy, referentiewagen, rekenmodel), Factoren (snelheid, temperatuur, stad of snelweg, lading, terrein) en Over deze schatting (disclaimer en bronnen). Elke "?" bij een omstandigheid toont eerst een korte uitleg, met "Meer uitleg" naar het onderwerp.
+De info-knop opent het overzicht, met drie groepen: Basis (hoe werkt Rangy, laden en voorverwarmen, referentiewagen, rekenmodel),
+Factoren (snelheid, temperatuur, wind, soort weg, lading, terrein) en Over deze schatting (disclaimer en bronnen).
+Elke "?" bij een omstandigheid toont eerst een korte uitleg, met "Meer uitleg" naar het onderwerp.
 
-- **Cijfers** komen uit `scenario/explain.js`: 20 °C, vlak, geen lading, snelweg 110 km/h, en telkens één factor anders.
+- **Cijfers** komen uit `scenario/explain.js` (20 °C, vlak, geen lading, geen wind, snelweg 110 km/h, telkens één factor anders)
+  of uit het plan (bereik en drukste dag van de gebruiker).
 - **Video bij een "?"**: zet `video` van het onderwerp in `ui/explain/topics.jsx` op een pad in `public/`, bv. `'/videos/temperatuur.mp4'`. Kort, zonder geluid, in een lus. Bij "minder beweging" speelt ze niet vanzelf af.
 - **Waarom deze wagen?**: vul `WHY_THIS_CAR` in `ui/explain/topics.jsx` in; zolang die leeg is, staat het blok niet op de pagina.
+- **Bronnen**: de lijst `SOURCES` in `ui/explain/topics.jsx`, met de verplichte vermelding van OpenStreetMap (ODbL) en BeST Address (CC BY 4.0).
 
-## Rekenmodel v2 (branch `feature/v2-calculation-model`)
+## Rekenmodel v2: regels en aannames
 
-Nieuwe modules naast het bestaande model. `useScenario` rekent al met `buildPlan`; de huidige schermen tonen nog
-de scène van v1, tot de nieuwe interface er is.
-
-```
-scenario/
-  roads.js    soorten weg: bebouwde kom (WLTC laag + middel), expresweg (WLTC high, geschaald naar limiet ± 3 km/u),
-              snelweg (eigen snelheid). Bereik en batterijdeel voor een mix, reserve 10 %, status.
-  trips.js    ritformaat (enkele afstand, heen en terug, dagen, mix, bestemming, lading per rit),
-              "jouw situatie", presets voor het welkomstvenster, omzetten van oude ritten.
-  wind.js     wind uit het weerbericht → tegen- en zijwind bij de auto; afgesteld op rijdata (ABRP).
-              Uit te zetten met WIND_ENABLED = false of buildPlan({ useWind: false }).
-  warmup.js   opwarmen bij een koude start (INL) en voorverwarmen aan de thuislader (DOE/Argonne).
-              Uit te zetten met WARMUP_ENABLED = false of buildPlan({ useWarmup: false }).
-  storage.js  ritten en "Jouw situatie" op het toestel bewaren (rangy.v2.*); ritten uit v1 worden omgezet.
-  legacy.js   tijdelijke brug naar de interface van v1 (stad/snelweg in Mijn ritten); weg met de nieuwe schermen.
-  explain.js  cijfers voor de Uitleg-pagina op het model v2: snelheid, soort weg, lading, wind, opwarmen, reserve
-              (terrein nog met het model van v1, als uitleg waarom het niet instelbaar is).
-  route/      routes van gemeente naar gemeente via GraphHopper (proxy /api/route, sleutel GRAPHHOPPER_KEY):
-              municipalities.json = 565 gemeenten met middelpunt (BOSA BeST Address, CC BY 4.0),
-              segments.js = route → stukken (soort weg, km, rijrichting, limiet), routeApi.js = de oproep.
-  useScenario geeft `plan` (v2) en `scene` (v1) terug, plus addTrip/updateTrip/removeTrip/clearTrips en setSituation.
-  plan.js     buildPlan(): eigen mix → groot getal, per dag verbruik en status, drukste dag,
-              week zonder dagelijks laden (eigen laaddagen of voorstel van Rangy, extra laadbeurten),
-              ritten die af en toe terugkomen.
-```
+Wind en opwarmen zijn uit te zetten met `WIND_ENABLED` / `WARMUP_ENABLED`, of per berekening met
+`buildPlan({ useWind: false, useWarmup: false })`.
 
 | Regel | Waarde | Basis |
 | --- | --- | --- |
@@ -146,8 +136,8 @@ scenario/
 | Voorverwarmen | alleen met thuislader, voor de heenrit; neemt 30–84 % van het opwarmen weg | gekalibreerd op DOE/Argonne: 9–20 % besparing, stadsrit 12 km bij −7 °C |
 | Opwarmen en het grote getal | het bereik (één lange rit) rekent zonder opwarmen; dagen, week en ritten met | rekenkeuze |
 | Oude opgeslagen ritten | worden "af en toe", met dezelfde totale afstand | omzetting |
-
-Wind per stuk route werkt zodra de route-API de stukken (soort weg, km, rijrichting) levert in `trip.segments`.
+| Terrein | vlak; alleen in de Uitleg ter vergelijking: glooiend ±3 %, heuvelachtig ±5 % | eigen keuze / eigen aanname |
+| Passagier / bagage | 75 kg per persoon (Verordening (EU) 1230/2012) / 20 kg per stuk (eigen aanname) | per rit |
 
 Bronnen wind: Bäcker (2021), *Wind influence on Tesla Model 3*, ABRP; Askerdal, Fredriksson & Laine (2023),
 *Development of simplified air drag models including crosswinds for commercial heavy vehicle combinations*,
