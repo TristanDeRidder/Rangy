@@ -112,6 +112,8 @@ scenario/
               Uit te zetten met WARMUP_ENABLED = false of buildPlan({ useWarmup: false }).
   storage.js  ritten en "Jouw situatie" op het toestel bewaren (rangy.v2.*); ritten uit v1 worden omgezet.
   legacy.js   tijdelijke brug naar de interface van v1 (stad/snelweg in Mijn ritten); weg met de nieuwe schermen.
+  explain.js  cijfers voor de Uitleg-pagina op het model v2: snelheid, soort weg, lading, wind, opwarmen, reserve
+              (terrein nog met het model van v1, als uitleg waarom het niet instelbaar is).
   useScenario geeft `plan` (v2) en `scene` (v1) terug, plus addTrip/updateTrip/removeTrip/clearTrips en setSituation.
   plan.js     buildPlan(): eigen mix → groot getal, per dag verbruik en status, drukste dag,
               week zonder dagelijks laden (eigen laaddagen of voorstel van Rangy, extra laadbeurten),
