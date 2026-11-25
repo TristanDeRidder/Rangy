@@ -36,3 +36,12 @@ export const IconBolt = ({ size = 14, title }) => (
     <path d="M8.16667 0.583008L1.75 8.16634H6.41667L5.25 13.4163L12.25 5.24967H7.58333L8.16667 0.583008Z" fill="#FF7A3D" />
   </svg>
 );
+/**
+ * Windrichting: pijl in de richting waarin de wind waait (uit het ontwerp, icon/windrichting).
+ * `toDeg` = waarheen de wind waait, 0 = noord, 90 = oost.
+ */
+export const IconWind = ({ toDeg = 0 }) => (
+  <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ transform: `rotate(${toDeg - 45}deg)` }}>
+    <path d="M6.3638 13.4347L13.4349 6.36358M13.4349 12.0204V6.36358H7.77802" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);

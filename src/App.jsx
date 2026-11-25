@@ -23,7 +23,7 @@ const DOCK_DEFAULT = 'calc(142px + env(safe-area-inset-bottom))';
 
 /**
  * Hoogte van de ingeklapte dock, zodat de baan er precies boven past.
- * De samenvatting kan naar twee regels gaan (terrein, lading): dan groeit de dock mee.
+ * Gaat de samenvatting naar twee regels, dan groeit de dock mee.
  * Open is de dock een paneel over de baan heen: die hoogte telt niet.
  */
 function useDockHeight(ref, collapsed) {
@@ -122,7 +122,7 @@ export default function App() {
           <div className="grid grid-cols-[380px_1fr_360px] gap-8 items-center max-w-378 mx-auto pt-6 px-12 pb-10 min-h-[calc(100vh-80px)]">
             <div className="flex flex-col gap-7">
               <Result plan={plan} onCar={() => explain('referentiewagen')} />
-              <Controls variant="panel" scene={scene} todayC={todayC} onHint={setHint} {...setters} />
+              <Controls variant="panel" inputs={plan.inputs} weatherReady={weather.status === 'ready'} todayC={todayC} onHint={setHint} {...setters} />
               {cta}
             </div>
             <div className={`flex justify-center origin-[0%_55%] transition-transform duration-350 ease-soft ${view !== 'overview' ? 'scale-75' : ''}`}>
@@ -173,7 +173,8 @@ export default function App() {
                 variant="sheet"
                 open={sheetOpen}
                 onToggle={() => setSheetOpen((o) => !o)}
-                scene={scene}
+                inputs={plan.inputs}
+                weatherReady={weather.status === 'ready'}
                 todayC={todayC}
                 onHint={setHint}
                 {...setters}

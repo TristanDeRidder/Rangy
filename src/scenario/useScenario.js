@@ -42,11 +42,6 @@ export function useScenario(initial = {}) {
   const [trips, setTripsState] = useState(() => loadTrips(storage(), DEFAULT_TRIPS));
   const [situation, setSituationState] = useState(() => loadSituation(storage()));
 
-  // alleen voor de interface van v1
-  const [tripType, setTripType] = useState(initial.tripType ?? 'snelweg');
-  const [terrain, setTerrain] = useState(initial.terrain ?? 'vlak');
-  const [passengers, setPassengers] = useState(initial.passengers ?? 0);
-  const [bags, setBags] = useState(initial.bags ?? 0);
 
   /** Alle ritten vervangen (nieuw formaat). Accepteert ook een functie van de huidige ritten. */
   const setTrips = useCallback((next) => {
@@ -133,13 +128,14 @@ export function useScenario(initial = {}) {
   );
 
   const legacyTrips = useMemo(() => trips.map(toLegacyTrip), [trips]);
+  // v1 (Mijn ritten, Uitleg): snelweg, vlak, zonder lading; verdwijnt met de nieuwe schermen
   const scene = useMemo(
-    () => buildScene({ tripType, speedKmh, tempC, terrain, passengers, bags, trips: legacyTrips }),
-    [tripType, speedKmh, tempC, terrain, passengers, bags, legacyTrips],
+    () => buildScene({ tripType: 'snelweg', speedKmh, tempC, terrain: 'vlak', passengers: 0, bags: 0, trips: legacyTrips }),
+    [speedKmh, tempC, legacyTrips],
   );
 
-  // omstandigheden (ook voor de interface v1, zie Controls); setters van useState veranderen niet
-  const controls = useMemo(() => ({ setSpeedKmh, setTempC, setTripType, setTerrain, setPassengers, setBags }), []);
+  // omstandigheden (zie Controls): snelheid op de snelweg en temperatuur; de wind komt uit het weer (setWind)
+  const controls = useMemo(() => ({ setSpeedKmh, setTempC }), []);
 
   return {
     plan,

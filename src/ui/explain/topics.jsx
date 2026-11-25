@@ -8,7 +8,7 @@
  */
 import { useMemo } from 'react';
 import WinterPanel from '../WinterPanel.jsx';
-import { speedRows, cityVsHighway, loadRows, terrainRows, carFacts, BASE } from '../../scenario/explain.js';
+import { speedRows, cityVsHighway, loadRows, terrainRows, carFacts, windRows, BASE } from '../../scenario/explain.js';
 import { TERRAIN, KG_PER_PASSENGER, KG_PER_BAG } from '../../scenario/buildScene.js';
 import { STATUS_LABEL } from '../../scene/shared/theme.js';
 import { P, Lead, H, Note, RangeBars, Facts, Status, span, r10 } from './parts.jsx';
@@ -66,6 +66,16 @@ export const TOPICS = [
     short: 'Een koude batterij levert iets minder energie en de verwarming moet aan. In de stad rij je traag, dus draait de verwarming lang voor elke kilometer.',
     video: null,
     Body: Temperature,
+  },
+  {
+    id: 'wind',
+    group: 'factoren',
+    title: 'Wind',
+    sub: 'Tegenwind kost meer dan rugwind oplevert',
+    short:
+      'Tegenwind kost extra, rugwind helpt minder dan je zou denken, en ook zijwind kost iets. Rangy neemt de wind van vandaag uit het weerbericht en rekent per stuk van je route.',
+    video: null,
+    Body: Wind,
   },
   {
     id: 'stad-snelweg',
@@ -340,6 +350,34 @@ function Disclaimer() {
         ))}
       </ul>
       <Note>Waarden die niet uit een bron komen, zijn eigen berekeningen of aannames en staan zo vermeld bij het onderwerp.</Note>
+    </>
+  );
+}
+
+function Wind() {
+  const [w] = useMemo(() => windRows([10]), []);
+  return (
+    <>
+      <Lead>Tegenwind kost extra, rugwind helpt minder dan je zou denken. Op een rit heen en terug verlies je daardoor netto iets.</Lead>
+      <RangeBars
+        rows={[
+          { label: 'ZONDER WIND', band: w.zonder },
+          { label: `TEGENWIND ${Math.round(w.kmh)} KM/U`, band: w.tegen },
+          { label: `RUGWIND ${Math.round(w.kmh)} KM/U`, band: w.mee },
+          { label: `ZIJWIND ${Math.round(w.kmh)} KM/U`, band: w.zij },
+          { label: 'HEEN EN TERUG', band: w.heenTerug },
+        ]}
+        caption={`SNELWEG 110 KM/H · ${BASE.tempC} °C · BEREKEND MET HET MODEL`}
+      />
+      <P>
+        De luchtweerstand hangt af van hoe snel de lucht langs de wagen stroomt: je eigen snelheid plus de tegenwind. Komt de wind schuin, dan
+        stijgt de weerstand ook. Rangy neemt de wind van vandaag uit het weerbericht en rekent per stuk van je route, heen en terug apart.
+        Zonder route rekent Rangy met het gemiddelde over alle windrichtingen.
+      </P>
+      <Note>
+        Afgesteld op rijdata van Tesla Model 3's bij 100–120 km/u: 10 m/s tegenwind kost 19 %, zijwind 8 %, rugwind spaart 6 % (Bäcker, 2021, A Better
+        Routeplanner). Wind op 10 m hoogte is bij de grond zwakker: eigen berekening.
+      </Note>
     </>
   );
 }
