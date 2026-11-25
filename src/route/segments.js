@@ -5,9 +5,10 @@
  * GraphHopper geeft de punten van de route en "path details": [van punt, tot punt, waarde],
  * hier `road_class` (bv. motorway, trunk, primary, residential) en `max_speed` (km/u of null).
  *
- * Indeling [eigen aanname, na te gaan met echte routes]:
- *  - motorway                                 → snelweg (rekent met de ingestelde snelheid)
- *  - limiet ≥ 70 km/u                         → expresweg, met die limiet
+ * Indeling [eigen aanname, nagekeken op Gent–Aalst, Gent–Eeklo en Gent–Antwerpen]:
+ *  - motorway, of een limiet ≥ 100 km/u       → snelweg: de ingestelde snelheid, begrensd op de limiet
+ *                                                (op- en afritten, R4 en ring van Antwerpen aan 50–90 km/u)
+ *  - limiet 70–90 km/u                        → expresweg, met die limiet
  *  - geen limiet bekend: trunk                → expresweg, 90 km/u
  *  - geen limiet bekend: primary, secondary   → expresweg, 70 km/u (standaard buiten de bebouwde kom in Vlaanderen)
  *  - de rest                                  → bebouwde kom
@@ -16,6 +17,8 @@ import { EXPRES_LIMIT_KMH } from '../scenario/roads.js';
 
 /** Vanaf deze limiet telt een weg als expresweg. */
 export const EXPRES_FROM_KMH = 70;
+/** Vanaf deze limiet telt een weg als snelweg, ook zonder motorway (in België alleen op snelwegen en sommige 2x2-wegen). */
+export const SNEL_FROM_KMH = 100;
 /** Standaardlimiet buiten de bebouwde kom in Vlaanderen sinds 2017 (ETSC, 2017). */
 export const DEFAULT_OUTSIDE_KMH = 70;
 /** Een stuk route wordt gesplitst als de richting meer dan zoveel graden afwijkt of het langer wordt dan MAX_KM. */
@@ -52,7 +55,7 @@ const angleDiff = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
 export function classify(roadClass, maxSpeed) {
   const rc = String(roadClass ?? '').toLowerCase();
   const limit = Number(maxSpeed) > 0 ? Number(maxSpeed) : null;
-  if (rc === 'motorway') return { road: 'snel', limitKmh: limit };
+  if (rc === 'motorway' || (limit && limit >= SNEL_FROM_KMH)) return { road: 'snel', limitKmh: limit };
   if (limit) return limit >= EXPRES_FROM_KMH ? { road: 'expres', limitKmh: limit } : { road: 'kom', limitKmh: limit };
   if (rc === 'trunk') return { road: 'expres', limitKmh: EXPRES_LIMIT_KMH };
   if (rc === 'primary' || rc === 'secondary') return { road: 'expres', limitKmh: DEFAULT_OUTSIDE_KMH };

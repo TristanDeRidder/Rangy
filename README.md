@@ -141,9 +141,9 @@ scenario/
 | Rugwind, beste geval | volledig natuurkundig effect (−16,5 % bij 10 m/s) | eigen berekening |
 | Wind zonder route | gemiddelde over alle windrichtingen | eigen aanname |
 | Route | van middelpunt tot middelpunt van de gemeenten (gemiddelde van de adrescoördinaten) | eigen aanname |
-| Soort weg uit de route | motorway = snelweg; limiet ≥ 70 = expresweg met die limiet; zonder limiet trunk = 90, primary/secondary = 70; rest = bebouwde kom | eigen aanname |
+| Soort weg uit de route | motorway of limiet ≥ 100 = snelweg; limiet 70–90 = expresweg met die limiet; zonder limiet trunk = 90, primary/secondary = 70; rest = bebouwde kom | eigen aanname, nagekeken op 3 routes |
 | Stukken route | gesplitst bij meer dan 30° draaien of na 5 km (voor de wind) | rekenkeuze |
-| Snelweg met route | rekent met de ingestelde snelheid, niet met de limiet uit de route | ontwerpkeuze |
+| Snelweg met route | de ingestelde snelheid, begrensd op de limiet ± 3 km/u van het stuk (op- en afritten, R4, ring van Antwerpen) | ontwerpkeuze |
 | Terugrit met route | dezelfde stukken in omgekeerde richting | eigen aanname |
 | `wind_degrees` (API Ninjas) | richting waar de wind vandaan komt, 0° = noord | nagegaan op 25-11-2026: API 95°, windy.com tegelijk oostenwind (pijl naar het westen) |
 | Wind over de week | de wind van vandaag geldt voor alle dagen (zoals de temperatuur) | ontwerpkeuze |

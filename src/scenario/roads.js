@@ -71,7 +71,7 @@ function whPerKm(road, variant, c, vw) {
       simulateCycle(expresCycle(c.expresKmh), { tempC: c.tempC, extraKg, wind: vw }, variant.veh).whPerKm,
     );
   }
-  const wh = consumptionWhPerKm({ speedKmh: c.speedKmh, tempC: c.tempC, extraKg, wind: vw }, variant.veh);
+  const wh = consumptionWhPerKm({ speedKmh: c.snelKmh ?? c.speedKmh, tempC: c.tempC, extraKg, wind: vw }, variant.veh);
   return wh * variant.snelFactor;
 }
 
@@ -93,8 +93,8 @@ function roadWhPerKm(road, variant, c, bearingDeg, kase) {
  * Energie voor een reeks stukken weg, in het slechtste en beste geval.
  * Slechtste geval: minst zuinige variant, expresweg 3 km/u boven de limiet, rugwind helpt beperkt.
  * Beste geval: zuinigste variant, expresweg 3 km/u onder de limiet, rugwind volgens de natuurkunde.
- * Een stuk route kan een eigen limiet hebben (`limitKmh`, uit de route); anders geldt `cond.expresLimitKmh`
- * of de standaardlimiet. De limiet geldt alleen voor de expresweg: de snelweg rekent met de ingestelde snelheid.
+ * Een stuk route kan een eigen limiet hebben (`limitKmh`, uit de route). Expresweg: die limiet ± 3 km/u, anders
+ * `cond.expresLimitKmh` of de standaardlimiet. Snelweg: de ingestelde snelheid, begrensd op de limiet ± 3 km/u.
  * @param {{ road: 'kom'|'expres'|'snel', km: number, bearingDeg?: number|null, limitKmh?: number|null }[]} parts
  * @param {{ speedKmh: number, tempC: number, extraKg?: number, expresLimitKmh?: number, wind?: object|null }} cond
  * @returns {{ worst: {wh:number, capWh:number}, best: {wh:number, capWh:number} }}  wh = voor alle km samen
@@ -104,7 +104,12 @@ function partsEnergy(parts, cond) {
   const run = (variant, tolerance, kase) => {
     const wh = parts.reduce((s, p) => {
       if (!p.km) return s;
-      const c = { ...cond, expresKmh: (p.limitKmh ?? fallback) + tolerance };
+      const c = {
+        ...cond,
+        expresKmh: (p.limitKmh ?? fallback) + tolerance,
+        // snelweg: de ingestelde snelheid, maar nooit sneller dan de limiet ± 3 km/u van dat stuk (bv. ring aan 70)
+        snelKmh: p.limitKmh != null ? Math.min(cond.speedKmh, p.limitKmh + tolerance) : cond.speedKmh,
+      };
       return s + p.km * roadWhPerKm(p.road, variant, c, p.bearingDeg, kase);
     }, 0);
     const capWh = variant.veh.usableKWh * 1000 * capacityFactor(cond.tempC, variant.veh);
