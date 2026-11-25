@@ -10,13 +10,8 @@ import { fetchRoute } from '../route/routeApi.js';
 /** Starttemperatuur van de slider, tot het echte weer binnen is (zie weather/useWeather.js). */
 export const TODAY = { tempC: 8 };
 
-/** Ritten bij een eerste bezoek, tot het nieuwe welkomstvenster ritten laat kiezen (formaat v1, worden omgezet). */
-const DEFAULT_TRIPS = [
-  { id: 'werk', name: 'Woon-werk', km: 45, type: 'stad' },
-  { id: 'weekend', name: 'Weekendrit', km: 150, type: 'snelweg' },
-  { id: 'uitstap', name: 'Uitstap', km: 340, type: 'snelweg' },
-  { id: 'vakantie', name: 'Vakantie', km: 600, type: 'snelweg' },
-];
+/** Bij een eerste bezoek zijn er geen ritten: het welkom laat de vaste ritten kiezen (zie WelcomeDialog). */
+const DEFAULT_TRIPS = [];
 
 const storage = () => {
   try {

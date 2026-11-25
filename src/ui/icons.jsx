@@ -58,3 +58,16 @@ export const IconChevron16 = ({ up }) => (
     <path d={up ? 'M3 10L8 5L13 10' : 'M3 6L8 11L13 6'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
   </svg>
 );
+/** Keuzerondje (aan/uit), uit het ontwerp. */
+export const IconRadio = ({ on }) => (
+  <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <circle cx="10" cy="10" r="9.25" strokeWidth="1.5" stroke="currentColor" />
+    {on && <circle cx="10" cy="10" r="5" fill="currentColor" />}
+  </svg>
+);
+/** Vinkje in een gekozen chip, uit het ontwerp. */
+export const IconCheck = () => (
+  <svg width={12} height={12} viewBox="0 0 12 12" fill="none" aria-hidden="true">
+    <path d="M2 6.5L5 9L10 3" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
+  </svg>
+);

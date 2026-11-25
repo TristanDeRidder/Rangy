@@ -38,10 +38,11 @@ const CHARGING = [
  * Mijn ritten: "Jouw situatie" bovenaan, daaronder de ritten als uitklapmenu (één tegelijk open),
  * van licht naar zwaar, met de grenzen van het zekere en het mogelijke bereik ertussen.
  * Alles blijft op het toestel (zie scenario/storage.js).
- * @param {{ plan: object, trips: object[], situation: object, actions: object, focus?: 'situatie'|null }} props
+ * @param {{ plan: object, trips: object[], situation: object, actions: object, focus?: string|null }} props
+ *        focus: wat bij het openen al open staat, 'situatie' of het id van een rit
  */
 export default function TripsPanel({ plan, trips, situation, actions, focus }) {
-  const [openId, setOpenId] = useState(focus === 'situatie' ? 'situatie' : null);
+  const [openId, setOpenId] = useState(focus ?? null);
   const toggle = (id) => setOpenId((cur) => (cur === id ? null : id));
   const stats = plan.tripStats;
   // volgorde van licht naar zwaar, maar alleen opnieuw sorteren bij het open- of dichtklappen:

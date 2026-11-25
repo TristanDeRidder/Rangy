@@ -59,7 +59,7 @@ export default function App() {
   const wide = useMediaQuery(WIDE);
   const [view, setView] = useState('overview'); // 'overview' | 'trips' | 'explain'
   const [tab, setTab] = useState('baan'); // gsm: 'baan' | 'week'
-  const [tripsFocus, setTripsFocus] = useState(null); // 'situatie': Mijn ritten opent met Jouw situatie open
+  const [tripsFocus, setTripsFocus] = useState(null); // wat open staat bij het openen van Mijn ritten: 'situatie' of een rit-id
   const openTrips = (focus = null) => {
     setTripsFocus(focus);
     setView('trips');
@@ -195,6 +195,14 @@ export default function App() {
         onMore={() => {
           setWelcomeOpen(false);
           explain('hoe-werkt');
+        }}
+        situation={situation}
+        trips={trips}
+        actions={actions}
+        onDone={(other) => {
+          setWelcomeOpen(false);
+          // "+ andere": een lege rit, meteen open in Mijn ritten
+          if (other) openTrips(actions.addTrip({ name: 'Andere rit', km: 0, days: [] }).id);
         }}
       />
       <HintDialog
