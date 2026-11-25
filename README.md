@@ -107,6 +107,8 @@ scenario/
               "jouw situatie", presets voor het welkomstvenster, omzetten van oude ritten.
   wind.js     wind uit het weerbericht → tegen- en zijwind bij de auto; afgesteld op rijdata (ABRP).
               Uit te zetten met WIND_ENABLED = false of buildPlan({ useWind: false }).
+  warmup.js   opwarmen bij een koude start (INL) en voorverwarmen aan de thuislader (DOE/Argonne).
+              Uit te zetten met WARMUP_ENABLED = false of buildPlan({ useWarmup: false }).
   plan.js     buildPlan(): eigen mix → groot getal, per dag verbruik en status, drukste dag,
               week zonder dagelijks laden (eigen laaddagen of voorstel van Rangy, extra laadbeurten),
               ritten die af en toe terugkomen.
@@ -131,12 +133,19 @@ scenario/
 | Wind zonder route | gemiddelde over alle windrichtingen | eigen aanname |
 | `wind_degrees` (API Ninjas) | richting waar de wind vandaan komt, 0° = noord | eigen aanname, nog na te gaan |
 | Wind over de week | de wind van vandaag geldt voor alle dagen (zoals de temperatuur) | ontwerpkeuze |
+| Opwarmen per koude start | 860 Wh bij −1 °C, 0 bij 21 °C, lineair (± 39 Wh/°C); onder −1 °C doorgetrokken | berekend uit INL; doortrekken eigen aanname |
+| Opwarmen, beste geval | 38 % minder (warmtepomp) | DOE/Argonne; toepassing op de Model Y eigen aanname |
+| Koude starts per rit | elke rit, en bij heen en terug ook de terugrit | eigen aanname |
+| Voorverwarmen | alleen met thuislader, voor de heenrit; neemt 30–84 % van het opwarmen weg | gekalibreerd op DOE/Argonne: 9–20 % besparing, stadsrit 12 km bij −7 °C |
+| Opwarmen en het grote getal | het bereik (één lange rit) rekent zonder opwarmen; dagen, week en ritten met | rekenkeuze |
 | Oude opgeslagen ritten | worden "af en toe", met dezelfde totale afstand | omzetting |
 
 Wind per stuk route werkt zodra de route-API de stukken (soort weg, km, rijrichting) levert in `trip.segments`.
 
-Nog niet in het model: opwarmen bij korte ritten in de kou en voorverwarmen (bron nog nodig).
-
 Bronnen wind: Bäcker (2021), *Wind influence on Tesla Model 3*, ABRP; Askerdal, Fredriksson & Laine (2023),
 *Development of simplified air drag models including crosswinds for commercial heavy vehicle combinations*,
 Vehicle System Dynamics 62(5); wind profile power law (exponent 1/7, open land).
+
+Bronnen opwarmen: Salisbury (2016), *2015 Nissan Leaf Cold Weather Testing*, Idaho National Laboratory;
+Walsh, Isaac, Vijayagopal e.a. (2024), *Impact of Cold Ambient Temperature and Extreme Conditions on Electric
+Vehicles*, DOE Program Record (Argonne National Laboratory).

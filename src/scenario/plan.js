@@ -9,6 +9,7 @@
  */
 import { mixRange, batteryShare, routeShare, shareStatus, weightedMix, RESERVE } from './roads.js';
 import { WIND_ENABLED, normalizeWind } from './wind.js';
+import { WARMUP_ENABLED, warmupShare } from './warmup.js';
 import { DAYS, DEFAULT_MIX, normalizeTrip, normalizeSituation, tripDistance, isWeekly } from './trips.js';
 import { extraKgOf } from './buildScene.js';
 import { scaleMaxKm, toT } from '../scene/shared/projection.js';
@@ -29,15 +30,22 @@ const cond = (inputs, t) => ({
 const returnLeg = (segments) =>
   [...segments].reverse().map((g) => ({ ...g, bearingDeg: g.bearingDeg == null ? null : (g.bearingDeg + 180) % 360 }));
 
-/**
- * Batterijdeel van één keer deze rit (heen en terug meegerekend).
- * Met een route: per stuk de echte tegen- of rugwind, heen en terug apart.
- * Zonder route: de mix van wegen, wind als gemiddelde over alle richtingen.
- */
-export function tripShare(t, inputs) {
+/** Batterijdeel van het rijden zelf. Met een route per stuk (wind heen en terug apart), anders met de mix. */
+function drivingShare(t, inputs) {
   const c = cond(inputs, t);
   if (t.segments?.length) return routeShare(t.roundTrip ? [...t.segments, ...returnLeg(t.segments)] : t.segments, c);
   return batteryShare(tripDistance(t), t.mix, c);
+}
+
+/**
+ * Batterijdeel van één keer deze rit (heen en terug meegerekend): rijden + opwarmen bij een koude start
+ * (zie warmup.js), met voorverwarmen als dat aan staat.
+ */
+export function tripShare(t, inputs) {
+  const drive = drivingShare(t, inputs);
+  if (!inputs.warmup) return drive;
+  const warm = warmupShare(t, inputs.tempC, inputs.preheat);
+  return { worst: drive.worst + warm.worst, best: drive.best + warm.best };
 }
 
 /**
@@ -191,20 +199,23 @@ export function simulateWeek(trips, inputs, chargeDays = []) {
 /**
  * Alles wat de schermen nodig hebben, in één object.
  * @param {{ speedKmh:number, tempC:number, expresLimitKmh?:number, wind?:{speedMs:number, fromDeg:number}|null,
- *           useWind?:boolean, trips:object[], situation?:object }} input
+ *           useWind?:boolean, useWarmup?:boolean, trips:object[], situation?:object }} input
  * wind: uit het weerbericht (zie wind.js); useWind: false zet wind uit voor deze berekening
+ * useWarmup: false zet het opwarmen bij een koude start uit (zie warmup.js)
  * situation.chargeDays: eigen laaddagen zonder thuislader (zie simulateWeek)
  */
 export function buildPlan(input) {
   const trips = (input.trips ?? []).map(normalizeTrip);
   const situation = normalizeSituation(input.situation);
-  // wind: alleen als de schakelaar aan staat (WIND_ENABLED, of per oproep useWind) en er wind is
+  // wind en opwarmen: alleen als de schakelaar aan staat (WIND_ENABLED / WARMUP_ENABLED, of per oproep)
   const useWind = input.useWind ?? WIND_ENABLED;
   const inputs = {
     speedKmh: input.speedKmh,
     tempC: input.tempC,
     expresLimitKmh: input.expresLimitKmh,
     wind: useWind ? normalizeWind(input.wind) : null,
+    warmup: input.useWarmup ?? WARMUP_ENABLED,
+    preheat: situation.preheat, // alleen mogelijk met thuislader (zie normalizeSituation)
   };
 
   const weekly = trips.filter(isWeekly);
