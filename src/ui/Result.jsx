@@ -12,7 +12,7 @@ export default function Result({ plan, onCar }) {
     <section className="flex justify-between items-end gap-4 pt-3.5 px-5 short:pt-1.5 wide:p-0" aria-live="polite">
       <div>
         <div className="flex items-baseline gap-2">
-          <span className="font-doto font-black text-[92px] leading-[88px] tracking-[-2px] short:text-[68px] short:leading-[64px] wide:text-[132px] wide:leading-[124px]">
+          <span className="font-doto font-black text-[92px] leading-[88px] tracking-[-2px] short:text-[68px] short:leading-[64px] wide:text-[132px] wide:leading-[124px] low:text-[104px] low:leading-[98px]">
             {round10(rangeKm.mid)}
           </span>
           <span className="font-mono text-[14px] font-semibold tracking-[0.08em]">KM</span>

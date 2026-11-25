@@ -253,7 +253,7 @@ function TripEditor({ trip, dest, onToggle, hasHome, actions }) {
         <label className="sr-only" htmlFor={`naam-${trip.id}`}>Naam van de rit</label>
         <input
           id={`naam-${trip.id}`}
-          className="flex-1 min-w-0 h-8 bg-transparent border-b border-dashed border-ink font-mono text-[13px] font-semibold tracking-[0.09em] uppercase outline-none"
+          className="flex-1 min-w-0 h-8 bg-transparent border-b border-dashed border-ink font-mono text-[16px] font-semibold tracking-[0.06em] uppercase outline-none"
           value={trip.name}
           onChange={(e) => update({ name: e.target.value })}
         />

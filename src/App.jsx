@@ -122,8 +122,8 @@ export default function App() {
         <Topbar weather={weather} onPlace={() => setWeatherOpen(true)} onInfo={() => (view === 'explain' ? close() : explain())} />
 
         {wide ? (
-          <div className="grid grid-cols-[380px_1fr_360px] gap-8 items-center max-w-378 mx-auto pt-6 px-12 pb-10 min-h-[calc(100vh-80px)]">
-            <div className="flex flex-col gap-7">
+          <div className="grid grid-cols-[380px_1fr_360px] gap-8 items-center max-w-378 mx-auto pt-6 px-12 pb-10 low:pt-2 low:pb-5 min-h-[calc(100vh-80px)]">
+            <div className="flex flex-col gap-7 low:gap-4">
               <Result plan={plan} onCar={() => explain('referentiewagen')} />
               <Controls variant="panel" inputs={plan.inputs} weatherReady={weather.status === 'ready'} todayC={todayC} onHint={setHint} {...setters} />
               {cta}

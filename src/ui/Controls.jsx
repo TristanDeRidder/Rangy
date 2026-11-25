@@ -102,7 +102,7 @@ export default function Controls({ variant, open, onToggle, inputs, weatherReady
 
   if (variant === 'panel') {
     return (
-      <section className={`${card} flex flex-col gap-4.5 pt-5 px-6 pb-5`} aria-labelledby="omst-titel">
+      <section className={`${card} flex flex-col gap-4.5 pt-5 px-6 pb-5 low:gap-3.5 low:pt-4 low:pb-4`} aria-labelledby="omst-titel">
         <h2 id="omst-titel" className={eyebrow}>OMSTANDIGHEDEN</h2>
         {fields}
       </section>
