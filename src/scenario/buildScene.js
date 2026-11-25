@@ -71,11 +71,13 @@ export function rangeBand({ tripType, speedKmh, tempC, terrain = 'vlak', passeng
   return { low, high, mid: (low + high) / 2 };
 }
 
-/** Status van een rit t.o.v. de bandbreedte, met optionele reserve bij aankomst. */
+/**
+ * Status van een rit t.o.v. de bandbreedte. De reserve geldt alleen voor "zeker haalbaar":
+ * het mogelijke bereik blijft zonder reserve (zie ook shareStatus in roads.js).
+ */
 export function tripStatus(km, band, reservePct = 0) {
-  const k = 1 - reservePct / 100;
-  if (km <= band.low * k) return 'haalbaar';
-  if (km <= band.high * k) return 'marge';
+  if (km <= band.low * (1 - reservePct / 100)) return 'haalbaar';
+  if (km <= band.high) return 'marge';
   return 'laadstop';
 }
 

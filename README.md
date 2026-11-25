@@ -94,3 +94,33 @@ De info-knop opent het overzicht, met drie groepen: Basis (hoe werkt Rangy, refe
 - **Cijfers** komen uit `scenario/explain.js`: 20 °C, vlak, geen lading, snelweg 110 km/h, en telkens één factor anders.
 - **Video bij een "?"**: zet `video` van het onderwerp in `ui/explain/topics.jsx` op een pad in `public/`, bv. `'/videos/temperatuur.mp4'`. Kort, zonder geluid, in een lus. Bij "minder beweging" speelt ze niet vanzelf af.
 - **Waarom deze wagen?**: vul `WHY_THIS_CAR` in `ui/explain/topics.jsx` in; zolang die leeg is, staat het blok niet op de pagina.
+
+## Rekenmodel v2 (branch `feature/v2-calculation-model`)
+
+Nieuwe, losse modules naast het bestaande model. De schermen gebruiken ze nog niet; dat volgt in een volgende stap.
+
+```
+scenario/
+  roads.js    soorten weg: bebouwde kom (WLTC laag + middel), expresweg (WLTC high, geschaald naar limiet ± 3 km/u),
+              snelweg (eigen snelheid). Bereik en batterijdeel voor een mix, reserve 10 %, status.
+  trips.js    ritformaat (enkele afstand, heen en terug, dagen, mix, bestemming, lading per rit),
+              "jouw situatie", presets voor het welkomstvenster, omzetten van oude ritten.
+  plan.js     buildPlan(): eigen mix → groot getal, per dag verbruik en status, drukste dag,
+              week zonder dagelijks laden (eigen laaddagen of voorstel van Rangy, extra laadbeurten),
+              ritten die af en toe terugkomen.
+```
+
+| Regel | Waarde | Basis |
+| --- | --- | --- |
+| Reserve | 10 %, alleen voor "zeker haalbaar" | ontwerpkeuze |
+| Expresweg zonder route | limiet 90 km/u | eigen aanname |
+| Andere wegen dan snelweg | limiet ± 3 km/u | ontwerpkeuze |
+| Rit zonder bestemming | 40 % bebouwde kom, 20 % expresweg, 40 % snelweg | eigen aanname |
+| Laadbeurt zonder thuislader | tot 90 %; de batterij mag niet onder 10 % zakken | eigen aanname |
+| Laaddag | je laadt vóór de ritten van die dag (bv. 's nachts of 's ochtends aan een publieke laadpaal) | eigen aanname |
+| Eigen laaddagen | gekozen in "Jouw situatie"; volstaan ze niet, dan toont Rangy een extra laadbeurt vóór de rit die onder 10 % zou zakken | ontwerpkeuze |
+| Voorstel laaddagen | zo weinig mogelijk dagen per week; bij gelijk aantal de combinatie met de meeste marge | rekenkeuze |
+| Week | twee weken doorgerekend, de tweede getoond (stabiel patroon) | rekenkeuze |
+| Oude opgeslagen ritten | worden "af en toe", met dezelfde totale afstand | omzetting |
+
+Nog niet in het model: wind per stuk route, opwarmen bij korte ritten in de kou en voorverwarmen (bron nog nodig).
