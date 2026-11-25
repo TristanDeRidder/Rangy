@@ -7,9 +7,11 @@
  *  - days       weekdagen waarop je de rit maakt, 0 = maandag … 6 = zondag. Leeg = af en toe.
  *  - mix        aandeel bebouwde kom / expresweg / snelweg (uit de route, of een standaardmix)
  *  - dest       bestemming (gemeente) of null als de afstand zelf ingegeven is
+ *  - segments   route in stukken (heenrit): soort weg, km en rijrichting; null zonder route.
+ *               Met een route komen km en mix uit de stukken.
  *  - load       lading voor deze rit, bovenop de bestuurder
  */
-import { normalizeMix } from './roads.js';
+import { normalizeMix, ROADS } from './roads.js';
 
 export const DAYS = ['MA', 'DI', 'WO', 'DO', 'VR', 'ZA', 'ZO'];
 export const WEEKDAYS = [0, 1, 2, 3, 4];
@@ -46,17 +48,41 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 export const cleanDays = (days) =>
   [...new Set((days ?? []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b);
 
+const cleanBearing = (deg) => (deg == null || !Number.isFinite(Number(deg)) ? null : ((Number(deg) % 360) + 360) % 360);
+const kmOn = (segments, road) => segments.filter((g) => g.road === road).reduce((s, g) => s + g.km, 0);
+
+/** Route-stukken opschonen: geldige soort weg, km > 0, rijrichting 0–360° of null. */
+function cleanSegments(segments) {
+  if (!Array.isArray(segments)) return null;
+  const clean = segments
+    .filter((g) => ROADS.includes(g.road) && Number(g.km) > 0)
+    .map((g) => ({
+      road: g.road,
+      km: Number(g.km),
+      bearingDeg: cleanBearing(g.bearingDeg),
+    }));
+  return clean.length ? clean : null;
+}
+
 /** Rit aanvullen met standaardwaarden en opschonen. */
 export function normalizeTrip(t) {
   const days = cleanDays(t.days);
+  const segments = cleanSegments(t.segments);
+  const fromRoute = segments
+    ? {
+        km: segments.reduce((s, g) => s + g.km, 0),
+        mix: Object.fromEntries(ROADS.map((r) => [r, kmOn(segments, r)])),
+      }
+    : null;
   return {
     id: t.id ?? newId(),
     name: t.name ?? 'Rit',
-    km: Math.max(0, Number(t.km) || 0),
+    km: fromRoute ? fromRoute.km : Math.max(0, Number(t.km) || 0),
     roundTrip: t.roundTrip ?? true,
     days,
-    mix: normalizeMix(t.mix ?? DEFAULT_MIX),
+    mix: normalizeMix(fromRoute ? fromRoute.mix : (t.mix ?? DEFAULT_MIX)),
     dest: t.dest ?? null,
+    segments,
     load: { passengers: Math.max(0, t.load?.passengers ?? 0), bags: Math.max(0, t.load?.bags ?? 0) },
   };
 }

@@ -105,6 +105,8 @@ scenario/
               snelweg (eigen snelheid). Bereik en batterijdeel voor een mix, reserve 10 %, status.
   trips.js    ritformaat (enkele afstand, heen en terug, dagen, mix, bestemming, lading per rit),
               "jouw situatie", presets voor het welkomstvenster, omzetten van oude ritten.
+  wind.js     wind uit het weerbericht → tegen- en zijwind bij de auto; afgesteld op rijdata (ABRP).
+              Uit te zetten met WIND_ENABLED = false of buildPlan({ useWind: false }).
   plan.js     buildPlan(): eigen mix → groot getal, per dag verbruik en status, drukste dag,
               week zonder dagelijks laden (eigen laaddagen of voorstel van Rangy, extra laadbeurten),
               ritten die af en toe terugkomen.
@@ -121,6 +123,20 @@ scenario/
 | Eigen laaddagen | gekozen in "Jouw situatie"; volstaan ze niet, dan toont Rangy een extra laadbeurt vóór de rit die onder 10 % zou zakken | ontwerpkeuze |
 | Voorstel laaddagen | zo weinig mogelijk dagen per week; bij gelijk aantal de combinatie met de meeste marge | rekenkeuze |
 | Week | twee weken doorgerekend, de tweede getoond (stabiel patroon) | rekenkeuze |
+| Wind: luchtweerstand | luchtsnelheid t.o.v. de auto (rijsnelheid + tegenwind, plus zijwind) | natuurkunde |
+| Wind bij de auto | 0,43 × de wind op 10 m | gekalibreerd op ABRP: 10 m/s tegenwind = +19 % |
+| Zijwind | +5,4 per rad² aanstroomhoek (± +10 % bij 8°), hoek begrensd op 20° | gekalibreerd op ABRP: 10 m/s zijwind = +8 %; begrenzing eigen aanname |
+| Rugwind, slechtste geval | 35 % van het natuurkundige effect | gekalibreerd op ABRP: 10 m/s rugwind = −6 % |
+| Rugwind, beste geval | volledig natuurkundig effect (−16,5 % bij 10 m/s) | eigen berekening |
+| Wind zonder route | gemiddelde over alle windrichtingen | eigen aanname |
+| `wind_degrees` (API Ninjas) | richting waar de wind vandaan komt, 0° = noord | eigen aanname, nog na te gaan |
+| Wind over de week | de wind van vandaag geldt voor alle dagen (zoals de temperatuur) | ontwerpkeuze |
 | Oude opgeslagen ritten | worden "af en toe", met dezelfde totale afstand | omzetting |
 
-Nog niet in het model: wind per stuk route, opwarmen bij korte ritten in de kou en voorverwarmen (bron nog nodig).
+Wind per stuk route werkt zodra de route-API de stukken (soort weg, km, rijrichting) levert in `trip.segments`.
+
+Nog niet in het model: opwarmen bij korte ritten in de kou en voorverwarmen (bron nog nodig).
+
+Bronnen wind: Bäcker (2021), *Wind influence on Tesla Model 3*, ABRP; Askerdal, Fredriksson & Laine (2023),
+*Development of simplified air drag models including crosswinds for commercial heavy vehicle combinations*,
+Vehicle System Dynamics 62(5); wind profile power law (exponent 1/7, open land).

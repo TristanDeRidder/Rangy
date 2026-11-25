@@ -7,7 +7,8 @@
  *  - per week zonder dagelijks laden: batterijniveau per dag en laadmomenten
  *  - ritten die af en toe terugkomen: status per rit
  */
-import { mixRange, batteryShare, shareStatus, weightedMix, RESERVE } from './roads.js';
+import { mixRange, batteryShare, routeShare, shareStatus, weightedMix, RESERVE } from './roads.js';
+import { WIND_ENABLED, normalizeWind } from './wind.js';
 import { DAYS, DEFAULT_MIX, normalizeTrip, normalizeSituation, tripDistance, isWeekly } from './trips.js';
 import { extraKgOf } from './buildScene.js';
 import { scaleMaxKm, toT } from '../scene/shared/projection.js';
@@ -21,11 +22,22 @@ const cond = (inputs, t) => ({
   tempC: inputs.tempC,
   expresLimitKmh: inputs.expresLimitKmh,
   extraKg: t ? extraKgOf(t.load) : 0,
+  wind: inputs.wind ?? null,
 });
 
-/** Batterijdeel van één keer deze rit (heen en terug meegerekend). */
+/** Terugrit: zelfde stukken in omgekeerde volgorde en richting. */
+const returnLeg = (segments) =>
+  [...segments].reverse().map((g) => ({ ...g, bearingDeg: g.bearingDeg == null ? null : (g.bearingDeg + 180) % 360 }));
+
+/**
+ * Batterijdeel van één keer deze rit (heen en terug meegerekend).
+ * Met een route: per stuk de echte tegen- of rugwind, heen en terug apart.
+ * Zonder route: de mix van wegen, wind als gemiddelde over alle richtingen.
+ */
 export function tripShare(t, inputs) {
-  return batteryShare(tripDistance(t), t.mix, cond(inputs, t));
+  const c = cond(inputs, t);
+  if (t.segments?.length) return routeShare(t.roundTrip ? [...t.segments, ...returnLeg(t.segments)] : t.segments, c);
+  return batteryShare(tripDistance(t), t.mix, c);
 }
 
 /**
@@ -178,16 +190,21 @@ export function simulateWeek(trips, inputs, chargeDays = []) {
 
 /**
  * Alles wat de schermen nodig hebben, in één object.
- * @param {{ speedKmh:number, tempC:number, expresLimitKmh?:number, trips:object[], situation?:object }} input
+ * @param {{ speedKmh:number, tempC:number, expresLimitKmh?:number, wind?:{speedMs:number, fromDeg:number}|null,
+ *           useWind?:boolean, trips:object[], situation?:object }} input
+ * wind: uit het weerbericht (zie wind.js); useWind: false zet wind uit voor deze berekening
  * situation.chargeDays: eigen laaddagen zonder thuislader (zie simulateWeek)
  */
 export function buildPlan(input) {
   const trips = (input.trips ?? []).map(normalizeTrip);
   const situation = normalizeSituation(input.situation);
+  // wind: alleen als de schakelaar aan staat (WIND_ENABLED, of per oproep useWind) en er wind is
+  const useWind = input.useWind ?? WIND_ENABLED;
   const inputs = {
     speedKmh: input.speedKmh,
     tempC: input.tempC,
     expresLimitKmh: input.expresLimitKmh,
+    wind: useWind ? normalizeWind(input.wind) : null,
   };
 
   const weekly = trips.filter(isWeekly);

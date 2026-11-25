@@ -57,7 +57,13 @@ export {};
  * @property {number[]} days                0 = maandag … 6 = zondag; leeg = af en toe
  * @property {RoadMix} mix                  uit de route, of de standaardmix
  * @property {string|null} dest             bestemming (gemeente) of null
+ * @property {RouteSegment[]|null} segments  route in stukken (heenrit), of null zonder route
  * @property {{ passengers: number, bags: number }} load  lading voor deze rit
+ *
+ * @typedef {{ road: 'kom'|'expres'|'snel', km: number, bearingDeg: number|null }} RouteSegment
+ *           bearingDeg = rijrichting, 0 = noord, 90 = oost
+ *
+ * @typedef {{ speedMs: number, fromDeg: number }} Wind  op 10 m hoogte, fromDeg = waar de wind vandaan komt
  *
  * @typedef {Object} Situation
  * @property {string|null} home             thuisgemeente

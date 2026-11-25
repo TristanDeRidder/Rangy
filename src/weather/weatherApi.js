@@ -49,6 +49,8 @@ export async function fetchWeather({ lat, lon }, signal) {
  * @property {number} humidity    procent
  * @property {number} cloudPct    procent
  * @property {number} windKmh
+ * @property {number | null} windMs     windsnelheid op 10 m (m/s), voor het rekenmodel
+ * @property {number | null} windDeg    windrichting in graden; aangenomen: waar de wind vandaan komt (0 = noord)
  * @property {string} description bv. "broken clouds"
  * @property {string} condition   bv. "Clouds", "Rain", "Snow"
  * @property {boolean} isDay
@@ -64,6 +66,8 @@ function normalize(raw) {
     humidity: round(raw.humidity),
     cloudPct: round(raw.cloud_pct),
     windKmh: typeof raw.wind_speed === 'number' ? Math.round(raw.wind_speed * 3.6) : null, // m/s → km/h
+    windMs: typeof raw.wind_speed === 'number' ? raw.wind_speed : null,
+    windDeg: typeof raw.wind_degrees === 'number' ? raw.wind_degrees : null,
     description: raw.weather_description ?? '',
     condition: raw.weather ?? '',
     isDay: raw.is_day ?? true,

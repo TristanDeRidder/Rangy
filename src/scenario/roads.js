@@ -6,12 +6,17 @@
  *  - snel     snelweg: constante snelheid die de gebruiker zelf instelt
  *
  * Elke soort wordt doorgerekend met de twee varianten van het model (literatuur en EV Database).
- * Het verschil tussen beide, plus de ± 3 km/u op de expresweg, vormt de marge.
+ * Het verschil tussen beide, plus de ± 3 km/u op de expresweg en het effect van rugwind (zie wind.js),
+ * vormt de marge.
+ *
+ * Wind (`cond.wind`, zie wind.js): met een rijrichting per stuk route wordt de echte tegen- en zijwind
+ * gebruikt, zonder rijrichting het gemiddelde over alle richtingen. `cond.wind = null` = geen wind.
  */
 import { simulateCycle, consumptionWhPerKm, capacityFactor } from '../model/model.js';
 import calibrated from '../model/calibrated-vehicle.json';
 import wltc from '../model/wltc-class3b.json';
 import { VEH_LIT, VEH_EVDB } from './buildScene.js';
+import { relativeWind, atVehicle, averageOverDirections } from './wind.js';
 
 const BAND = calibrated.bandFactor;
 
@@ -44,24 +49,68 @@ const memo = (key, fn) => {
   return cache.get(key);
 };
 
+const windKey = (vw) => (vw ? `${vw.headMs.toFixed(3)},${vw.crossMs.toFixed(3)}` : '-');
+
 /**
- * Verbruik (Wh/km) van één soort weg voor één variant.
+ * Verbruik (Wh/km) van één soort weg voor één variant, bij een vaste wind op autohoogte.
  * @param {'kom'|'expres'|'snel'} road
  * @param {{ veh: object, snelFactor: number }} variant
  * @param {{ speedKmh: number, tempC: number, extraKg?: number, expresKmh: number }} c
+ * @param {object|null} vw  wind op de hoogte van de auto (zie atVehicle in wind.js), of null
  */
-function whPerKm(road, variant, c) {
+function whPerKm(road, variant, c, vw) {
   const extraKg = c.extraKg ?? 0;
   const id = variant.veh === VEH_LIT ? 'lit' : 'evdb';
   if (road === 'kom') {
-    return memo(`kom|${id}|${c.tempC}|${extraKg}`, () => simulateCycle(CITY, { tempC: c.tempC, extraKg }, variant.veh).whPerKm);
-  }
-  if (road === 'expres') {
-    return memo(`expres|${id}|${c.tempC}|${extraKg}|${c.expresKmh}`, () =>
-      simulateCycle(expresCycle(c.expresKmh), { tempC: c.tempC, extraKg }, variant.veh).whPerKm,
+    return memo(`kom|${id}|${c.tempC}|${extraKg}|${windKey(vw)}`, () =>
+      simulateCycle(CITY, { tempC: c.tempC, extraKg, wind: vw }, variant.veh).whPerKm,
     );
   }
-  return consumptionWhPerKm({ speedKmh: c.speedKmh, tempC: c.tempC, extraKg }, variant.veh) * variant.snelFactor;
+  if (road === 'expres') {
+    return memo(`expres|${id}|${c.tempC}|${extraKg}|${c.expresKmh}|${windKey(vw)}`, () =>
+      simulateCycle(expresCycle(c.expresKmh), { tempC: c.tempC, extraKg, wind: vw }, variant.veh).whPerKm,
+    );
+  }
+  const wh = consumptionWhPerKm({ speedKmh: c.speedKmh, tempC: c.tempC, extraKg, wind: vw }, variant.veh);
+  return wh * variant.snelFactor;
+}
+
+/**
+ * Verbruik (Wh/km) van één soort weg, met wind als die er is.
+ * @param {number|null|undefined} bearingDeg  rijrichting; zonder richting: gemiddelde over alle richtingen
+ * @param {'worst'|'best'} kase
+ */
+function roadWhPerKm(road, variant, c, bearingDeg, kase) {
+  const w = c.wind;
+  if (!w) return whPerKm(road, variant, c, null);
+  if (bearingDeg == null) {
+    return averageOverDirections((rel) => whPerKm(road, variant, c, atVehicle(rel, kase)), w.speedMs);
+  }
+  return whPerKm(road, variant, c, atVehicle(relativeWind(bearingDeg, w), kase));
+}
+
+/**
+ * Energie voor een reeks stukken weg, in het slechtste en beste geval.
+ * Slechtste geval: minst zuinige variant, expresweg 3 km/u boven de limiet, rugwind helpt beperkt.
+ * Beste geval: zuinigste variant, expresweg 3 km/u onder de limiet, rugwind volgens de natuurkunde.
+ * @param {{ road: 'kom'|'expres'|'snel', km: number, bearingDeg?: number|null }[]} parts
+ * @param {{ speedKmh: number, tempC: number, extraKg?: number, expresLimitKmh?: number, wind?: object|null }} cond
+ * @returns {{ worst: {wh:number, capWh:number}, best: {wh:number, capWh:number} }}  wh = voor alle km samen
+ */
+function partsEnergy(parts, cond) {
+  const limit = cond.expresLimitKmh ?? EXPRES_LIMIT_KMH;
+  const run = (variant, expresKmh, kase) => {
+    const c = { ...cond, expresKmh };
+    const wh = parts.reduce((s, p) => s + (p.km ? p.km * roadWhPerKm(p.road, variant, c, p.bearingDeg, kase) : 0), 0);
+    const capWh = variant.veh.usableKWh * 1000 * capacityFactor(cond.tempC, variant.veh);
+    return { wh, capWh };
+  };
+  const share = (x) => x.wh / x.capWh;
+  const hi = VARIANTS.map((v) => run(v, limit + SPEED_TOLERANCE_KMH, 'worst'));
+  const lo = VARIANTS.map((v) => run(v, limit - SPEED_TOLERANCE_KMH, 'best'));
+  const worst = hi.reduce((a, b) => (share(b) > share(a) ? b : a));
+  const best = lo.reduce((a, b) => (share(b) < share(a) ? b : a));
+  return { worst, best };
 }
 
 /** Mix normaliseren: ontbrekende soorten = 0, som = 1. */
@@ -74,26 +123,19 @@ export function normalizeMix(mix = {}) {
 
 /**
  * Verbruik en beschikbare energie voor een mix van wegen, in het slechtste en beste geval.
- * Slechtste geval: zuinigste variant niet, expresweg 3 km/u boven de limiet.
- * Beste geval: zuinigste variant, expresweg 3 km/u onder de limiet.
+ * Zonder rijrichting: wind (als die er is) als gemiddelde over alle richtingen.
  * @param {{kom?:number, expres?:number, snel?:number}} mix
- * @param {{ speedKmh: number, tempC: number, extraKg?: number, expresLimitKmh?: number }} cond
- * @returns {{ worst: {wh:number, capWh:number}, best: {wh:number, capWh:number} }}
+ * @param {{ speedKmh: number, tempC: number, extraKg?: number, expresLimitKmh?: number, wind?: object|null }} cond
+ * @returns {{ worst: {wh:number, capWh:number, km:number}, best: {wh:number, capWh:number, km:number} }}  wh per km
  */
 export function mixEnergy(mix, cond) {
   const m = normalizeMix(mix);
-  const limit = cond.expresLimitKmh ?? EXPRES_LIMIT_KMH;
-  const per = (variant, expresKmh) => {
-    const c = { ...cond, expresKmh };
-    const wh = ROADS.reduce((s, r) => s + (m[r] ? m[r] * whPerKm(r, variant, c) : 0), 0);
-    const capWh = variant.veh.usableKWh * 1000 * capacityFactor(cond.tempC, variant.veh);
-    return { wh, capWh, km: capWh / wh };
-  };
-  const hi = VARIANTS.map((v) => per(v, limit + SPEED_TOLERANCE_KMH));
-  const lo = VARIANTS.map((v) => per(v, limit - SPEED_TOLERANCE_KMH));
-  const worst = hi.reduce((a, b) => (b.km < a.km ? b : a));
-  const best = lo.reduce((a, b) => (b.km > a.km ? b : a));
-  return { worst, best };
+  const { worst, best } = partsEnergy(
+    ROADS.map((road) => ({ road, km: m[road] })),
+    cond,
+  );
+  const withKm = (x) => ({ ...x, km: x.capWh / x.wh });
+  return { worst: withKm(worst), best: withKm(best) };
 }
 
 /** Bereik (km) voor een mix: zeker (laagste), mogelijk (hoogste), en zeker met reserve. */
@@ -111,6 +153,16 @@ export function mixRange(mix, cond) {
 export function batteryShare(distanceKm, mix, cond) {
   const { worst, best } = mixEnergy(mix, cond);
   return { worst: (distanceKm * worst.wh) / worst.capWh, best: (distanceKm * best.wh) / best.capWh };
+}
+
+/**
+ * Deel van de batterij voor een route in stukken (uit de route-API), met de rijrichting per stuk.
+ * @param {{ road: 'kom'|'expres'|'snel', km: number, bearingDeg?: number|null }[]} segments
+ * @returns {{ worst: number, best: number }}
+ */
+export function routeShare(segments, cond) {
+  const { worst, best } = partsEnergy(segments, cond);
+  return { worst: worst.wh / worst.capWh, best: best.wh / best.capWh };
 }
 
 /**

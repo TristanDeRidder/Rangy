@@ -49,6 +49,31 @@ export function airDensity(tempC) {
   return P_ATM / (R_AIR * (tempC + 273.15));
 }
 
+/** Bovengrens van de aanstroomhoek (rad) voor de toename van de luchtweerstand bij zijwind [eigen aanname]. */
+const MAX_YAW = (20 * Math.PI) / 180;
+
+/**
+ * Luchtweerstand in de rijrichting (N).
+ * Zonder wind: ½ · ρ · CdA · v².
+ * Met wind rekent de formule met de luchtsnelheid t.o.v. de auto (rijsnelheid + tegenwind, plus zijwind)
+ * en een hogere weerstand als de lucht schuin aanstroomt (Askerdal et al., 2023).
+ * @param {number} rho     luchtdichtheid (kg/m³)
+ * @param {number} cdA     m²
+ * @param {number} v       rijsnelheid (m/s)
+ * @param {{ headMs?: number, crossMs?: number, yawCoeff?: number } | null} [wind]
+ *        headMs  tegenwind (positief) of rugwind (negatief) op de hoogte van de auto, m/s
+ *        crossMs zijwind op de hoogte van de auto, m/s
+ *        yawCoeff toename van de weerstand per rad² aanstroomhoek
+ */
+export function aeroForce(rho, cdA, v, wind = null) {
+  if (!wind) return 0.5 * rho * cdA * v * v;
+  const ax = v + (wind.headMs ?? 0);
+  const ay = Math.abs(wind.crossMs ?? 0);
+  const yaw = Math.min(MAX_YAW, Math.atan2(ay, Math.abs(ax)));
+  const cx = 1 + (wind.yawCoeff ?? 0) * yaw * yaw;
+  return 0.5 * rho * cdA * cx * (ax * ax + ay * ay) * Math.sign(ax);
+}
+
 /** Fractie van de bruikbare batterijcapaciteit die beschikbaar is (1 bij ≥ 23 °C). */
 export function capacityFactor(tempC, veh = DEFAULT_VEHICLE) {
   return Math.max(0, 1 - veh.capLossPerDeg * Math.max(0, T_REF - tempC));
@@ -74,15 +99,16 @@ export function hvacPower(tempC, veh = DEFAULT_VEHICLE) {
  * @param {number} [o.gradePct=0]   helling in % (positief = bergop)
  * @param {number} [o.extraKg=0]    passagiers en bagage
  * @param {boolean} [o.hvac=true]   verwarming/airco aan
+ * @param {object|null} [o.wind]    wind op de hoogte van de auto (zie aeroForce)
  */
 export function powerBreakdown(o, veh = DEFAULT_VEHICLE) {
-  const { speedKmh, tempC = T_REF, gradePct = 0, extraKg = 0, hvac = true } = o;
+  const { speedKmh, tempC = T_REF, gradePct = 0, extraKg = 0, hvac = true, wind = null } = o;
   const v = speedKmh / 3.6;
   const m = veh.massKg + veh.driverKg + extraKg;
   const theta = Math.atan(gradePct / 100);
 
   const fRoll = veh.crr * m * G * Math.cos(theta);
-  const fAero = 0.5 * airDensity(tempC) * veh.cdA * v * v;
+  const fAero = aeroForce(airDensity(tempC), veh.cdA, v, wind);
   const fGrade = m * G * Math.sin(theta);
   const fTotal = fRoll + fAero + fGrade;
 
@@ -129,11 +155,11 @@ export function rangeKm(o, veh = DEFAULT_VEHICLE) {
  * Rijcyclus seconde per seconde doorrekenen, inclusief optrekken en remmen.
  * Bij vertragen wordt de vrijkomende energie teruggewonnen met etaRegenBraking.
  * @param {number[]} speedsKmh  snelheid per tijdstap (km/h)
- * @param {{tempC?:number, extraKg?:number, hvac?:boolean, gradePct?:number, dt?:number}} conditions
+ * @param {{tempC?:number, extraKg?:number, hvac?:boolean, gradePct?:number, dt?:number, wind?:object|null}} conditions
  * @returns {{distanceKm:number, energyWh:number, whPerKm:number, avgKmh:number}}
  */
 export function simulateCycle(speedsKmh, conditions = {}, veh = DEFAULT_VEHICLE) {
-  const { tempC = T_REF, extraKg = 0, hvac = true, gradePct = 0, dt = 1 } = conditions;
+  const { tempC = T_REF, extraKg = 0, hvac = true, gradePct = 0, dt = 1, wind = null } = conditions;
   const m = veh.massKg + veh.driverKg + extraKg;
   const rho = airDensity(tempC);
   const eta = driveEfficiency(tempC, veh);
@@ -149,7 +175,7 @@ export function simulateCycle(speedsKmh, conditions = {}, veh = DEFAULT_VEHICLE)
     const a = (v1 - v0) / dt;
     const moving = v > 0.01;
     const f = (moving ? veh.crr * m * G * Math.cos(theta) + m * G * Math.sin(theta) : 0)
-      + 0.5 * rho * veh.cdA * v * v
+      + (moving || !wind ? aeroForce(rho, veh.cdA, v, wind) : 0) // stilstaan: wind duwt niet tegen de remmen in
       + m * a;
     const pWheel = f * v;
     const pBatt = pWheel >= 0 ? pWheel / eta : pWheel * veh.etaRegenBraking;
