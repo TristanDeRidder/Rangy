@@ -1,7 +1,7 @@
 import { STATUS_COLOR, STATUS_LABEL } from './theme.js';
 
 /**
- * Markering bij een rit (gedeeld door 3D en SVG).
+ * Markering bij een rit op de baan.
  * Het label staat als HTML boven de scène, dus de tekst is in beide versies identiek en scherp.
  * `side` bepaalt aan welke kant van de paal het label hangt.
  * Maten in em: het label schaalt mee met de lettergrootte van de overlay (zie sceneOverlay in cls.js),

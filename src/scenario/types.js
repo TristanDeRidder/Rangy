@@ -1,7 +1,7 @@
 /**
  * Het contract tussen het rekenmodel en de weergave.
- * De 3D-scène, de SVG-scène en de 2D-laag lezen ALLEEN dit object.
- * Ze rekenen zelf niets: zo tonen beide weergaven altijd dezelfde cijfers.
+ * De baan (SVG) en de interface lezen ALLEEN dit object.
+ * Ze rekenen zelf niets: zo tonen ze altijd dezelfde cijfers.
  *
  * @typedef {'stad' | 'snelweg'} TripType
  * @typedef {'haalbaar' | 'marge' | 'laadstop'} TripStatus

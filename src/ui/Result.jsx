@@ -2,7 +2,7 @@ import { TERRAIN } from '../scenario/buildScene.js';
 
 const round10 = (km) => Math.round(km / 10) * 10;
 
-/** Het resultaat: altijd in 2D, zodat het in de 3D- en SVG-versie identiek is. */
+/** Het resultaat: het grote getal en de marge. */
 export default function Result({ scene, onWinter, onCar, showLink }) {
   const { tripType, speedKmh, tempC, terrain = 'vlak' } = scene.inputs;
   return (

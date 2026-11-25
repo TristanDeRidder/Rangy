@@ -1,7 +1,6 @@
 /**
- * Eén schaal voor afstanden, gedeeld door 3D en SVG.
- * t = 0 bij de auto, t = 1 aan het einde van de schaal.
- * 3D zet t om naar een plaats langs de z-as, SVG naar een y-positie in perspectief.
+ * Eén schaal voor afstanden op de baan.
+ * t = 0 bij de auto, t = 1 aan het einde van de schaal; de SVG zet t om naar een y-positie in perspectief.
  */
 
 /** Lengte van de schaal: ruim genoeg voor het bereik en de verste rit, afgerond op 100 km. */
@@ -15,16 +14,10 @@ export function toT(km, maxKm) {
 }
 
 /**
- * Perspectief voor de SVG-versie: benadert wat de 3D-camera doet.
+ * Perspectief van de baan: verder weg = dichter bij de horizon.
  * Geeft de y-positie (0 = horizon, 1 = onderrand) voor een t.
  */
 export const PERSPECTIVE_K = 4;
 export function perspectiveY(t) {
   return 1 / (1 + PERSPECTIVE_K * t);
-}
-
-/** Lengte van de 3D-baan in scène-eenheden. */
-export const ROAD_LENGTH = 40;
-export function toZ(t) {
-  return -t * ROAD_LENGTH;
 }

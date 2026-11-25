@@ -1,7 +1,7 @@
 # Rangy
 
 Mobiele webtool die toont welke van je eigen ritten een EV aankan, en hoe snelheid, temperatuur, terrein en lading dat veranderen.
-De baan kan in 3D (React Three Fiber) of als SVG getoond worden. Beide krijgen exact dezelfde gegevens.
+De baan is een SVG; 3D is weggelaten (zie de motivatie in het dossier).
 
 ## Starten
 
@@ -11,8 +11,6 @@ npm run dev        # ontwikkelserver; ook bereikbaar op je gsm via het netwerkad
 npm test           # controleert het rekenmodel en de scène
 npm run build      # productieversie in dist/
 ```
-
-Wisselen tussen 3D en SVG: voeg `?view=svg` of `?view=3d` toe aan de URL.
 
 ## Opbouw
 
@@ -30,13 +28,11 @@ src/
     winter.js            uitleg temperatuur: verlies door kou vs. verwarming
     explain.js           cijfers voor de Uitleg: telkens één factor veranderen
   scene/
-    RoadScene.jsx        enige plek die kiest tussen 3D en SVG
+    RoadScene.jsx        de baan
     shared/
       projection.js      één schaal voor afstanden (t = 0 bij de auto, 1 aan het einde)
       theme.js           kleuren en statuslabels uit het ontwerp
-      viewMode.js        ?view=, WebGL-detectie, standaardkeuze
-      Tag.jsx            label bij een rit (HTML boven de scène, gedeeld door 3D en SVG)
-    three/RoadScene3D.jsx
+      Tag.jsx            label bij een rit (HTML boven de baan)
     svg/RoadSceneSVG.jsx
   ui/
     Topbar.jsx           merknaam, weer, info-knop (opent de Uitleg)
@@ -56,18 +52,15 @@ src/
 ```
 
 ```
-rekenmodel → buildScene() → scène ─┬─→ RoadScene3D  (of)  RoadSceneSVG
+rekenmodel → buildScene() → scène ─┬─→ RoadSceneSVG
                                    └─→ 2D-laag: Topbar, Result, Controls, panelen
 ```
 
 ## Afspraken
 
-1. **Geen rekenwerk in een weergave.** 3D en SVG lezen alleen het `scene`-object. Zo tonen ze nooit andere cijfers.
-2. **Tekst en getallen altijd in de 2D-laag.** 3D legt uit (baan, auto, krachten), 2D toont het resultaat. De labels bij de ritten zijn HTML boven de scène (`Tag.jsx`): de SVG-versie plaatst ze met percentages, de 3D-versie projecteert de toppen van de palen naar het scherm.
-3. **Eén schaal.** Een afstand wordt via `projection.js` een positie `t`. 3D zet `t` om naar de z-as, SVG naar een y-positie in perspectief.
-4. **3D wordt pas geladen als het nodig is** (`React.lazy`). Tijdens het laden, en op toestellen zonder WebGL, toont de SVG-versie hetzelfde beeld.
-
-3D schrappen? Zet `DEFAULT_VIEW` in `scene/shared/viewMode.js` op `'svg'` en verwijder de map `scene/three/`.
+1. **Geen rekenwerk in een weergave.** De baan leest alleen het `scene`-object. Zo toont ze nooit andere cijfers.
+2. **Tekst en getallen altijd in HTML.** De labels bij de ritten staan boven de SVG (`Tag.jsx`), geplaatst met percentages.
+3. **Eén schaal.** Een afstand wordt via `projection.js` een positie `t`, de SVG zet `t` om naar een y-positie in perspectief.
 
 ## Schermen
 

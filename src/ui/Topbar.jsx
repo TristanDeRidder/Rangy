@@ -2,12 +2,12 @@ import { IconCloud, IconInfo, IconPin } from './icons.jsx';
 import { roundBtn } from './cls.js';
 
 /** Kop: merknaam, weer van de gekozen plaats (klik om te wijzigen) en info-knop. */
-export default function Topbar({ weather, onPlace, onInfo, mode }) {
+export default function Topbar({ weather, onPlace, onInfo }) {
   const { place, status, data } = weather;
   const temp = status === 'ready' ? `${data.tempC} °C` : status === 'loading' ? '…' : '– °C';
   return (
     <header className="flex justify-between items-center pt-5 px-5 short:pt-2.5 wide:pt-7 wide:px-12">
-      <span className="font-mono text-[14px] font-bold tracking-[0.22em]" title={`Weergave: ${mode}. Wissel met ?view=svg of ?view=3d`}>RANGY</span>
+      <span className="font-mono text-[14px] font-bold tracking-[0.22em]">RANGY</span>
       <div className="flex gap-2 items-center">
         <button
           type="button"

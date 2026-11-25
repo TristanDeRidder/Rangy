@@ -1,4 +1,4 @@
-/** Kleuren uit het ontwerp (Figma, sectie Design). Gedeeld door 3D, SVG en 2D. */
+/** Kleuren uit het ontwerp (Figma, sectie Design). Gedeeld door de baan en de interface. */
 export const COLORS = {
   ink: '#141414',
   muted: '#555555',

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useScenario } from './scenario/useScenario.js';
 import { useWeather } from './weather/useWeather.js';
-import { getViewMode } from './scene/shared/viewMode.js';
 import RoadScene from './scene/RoadScene.jsx';
 import Topbar from './ui/Topbar.jsx';
 import Result from './ui/Result.jsx';
@@ -55,7 +54,6 @@ export default function App() {
   // scene + setters = huidige interface (v1); plan (rekenmodel v2) is er voor de nieuwe schermen
   const { scene, controls: setters, setLegacyTrips, setWind } = useScenario();
   const { setTempC } = setters;
-  const [mode] = useState(getViewMode); // '3d' of 'svg', zie scene/shared/viewMode.js
   const wide = useMediaQuery(WIDE);
   const [view, setView] = useState('overview'); // 'overview' | 'trips' | 'explain'
   const [topic, setTopic] = useState(null); // onderwerp in de Uitleg, null = overzicht
@@ -110,7 +108,7 @@ export default function App() {
         style={wide ? undefined : { paddingBottom: dockH ?? DOCK_DEFAULT }}
         ref={mainRef}
       >
-        <Topbar weather={weather} onPlace={() => setWeatherOpen(true)} mode={mode} onInfo={() => (view === 'explain' ? close() : explain())} />
+        <Topbar weather={weather} onPlace={() => setWeatherOpen(true)} onInfo={() => (view === 'explain' ? close() : explain())} />
 
         {wide ? (
           <div className="grid grid-cols-[401px_1fr] gap-10 items-center max-w-378 mx-auto pt-6 px-12 pb-10 min-h-[calc(100vh-80px)]">
@@ -120,7 +118,7 @@ export default function App() {
               {cta}
             </div>
             <div className={`flex justify-center origin-[0%_55%] transition-transform duration-350 ease-soft ${view !== 'overview' ? 'scale-75' : ''}`}>
-              <RoadScene scene={scene} mode={mode} />
+              <RoadScene scene={scene} />
             </div>
           </div>
         ) : (
@@ -130,7 +128,7 @@ export default function App() {
                 Size-container: de baan schaalt mee met de hoogte die overblijft (zie sceneBox in cls.js).
                 Ruimte bovenaan: de labels van verre ritten steken boven de baan uit. */}
             <div className="flex-1 min-h-0 flex flex-col justify-center w-full pt-9 pb-3 short:pt-8 short:pb-1.5 @container-size">
-              <RoadScene scene={scene} mode={mode} />
+              <RoadScene scene={scene} />
             </div>
             <div
               ref={dockRef}
