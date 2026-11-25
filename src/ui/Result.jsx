@@ -1,25 +1,25 @@
-import { TERRAIN } from '../scenario/buildScene.js';
-
 const round10 = (km) => Math.round(km / 10) * 10;
 
-/** Het resultaat: het grote getal en de marge. */
-export default function Result({ scene, onWinter, onCar, showLink }) {
-  const { tripType, speedKmh, tempC, terrain = 'vlak' } = scene.inputs;
+/**
+ * Het resultaat: het grote getal (bereik met je eigen mix van wegen) en de marge.
+ * Rechts: de mix en de temperatuur waarmee gerekend is.
+ * @param {{ plan: import('../scenario/types.js').Plan, onCar: () => void }} props
+ */
+export default function Result({ plan, onCar }) {
+  const { rangeKm, mix, inputs } = plan;
+  const hasWeekly = plan.days.some((d) => d.trips.length);
   return (
     <section className="flex justify-between items-end gap-4 pt-3.5 px-5 short:pt-1.5 wide:p-0" aria-live="polite">
       <div>
         <div className="flex items-baseline gap-2">
-          <span className="font-doto font-black text-[92px] leading-[88px] tracking-[-2px] short:text-[68px] short:leading-[64px] wide:text-[132px] wide:leading-[124px]">{round10(scene.rangeKm.mid)}</span>
+          <span className="font-doto font-black text-[92px] leading-[88px] tracking-[-2px] short:text-[68px] short:leading-[64px] wide:text-[132px] wide:leading-[124px]">
+            {round10(rangeKm.mid)}
+          </span>
           <span className="font-mono text-[14px] font-semibold tracking-[0.08em]">KM</span>
         </div>
         <p className="font-mono text-[13px] text-muted tracking-[0.08em] mt-1.5 short:mt-0.5">
-          TUSSEN {round10(scene.rangeKm.low)} EN {round10(scene.rangeKm.high)} KM
+          TUSSEN {round10(rangeKm.low)} EN {round10(rangeKm.high)} KM
         </p>
-        {showLink && (
-          <button type="button" className="py-2 font-mono text-[12px] font-semibold tracking-[0.08em] underline underline-offset-3" onClick={onWinter}>
-            WAAROM MINDER IN DE WINTER? →
-          </button>
-        )}
         {/* Het getal geldt voor één wagen: altijd zichtbaar, klik voor Uitleg › Referentiewagen */}
         <button
           type="button"
@@ -31,12 +31,10 @@ export default function Result({ scene, onWinter, onCar, showLink }) {
           <span className="sr-only">: over de referentiewagen</span>
         </button>
       </div>
-      <ul className="font-mono text-[12px] leading-[18px] tracking-[0.1em] pb-[30px] short:pb-7 text-left" aria-label="Huidige omstandigheden">
-        <li>{tripType === 'stad' ? 'STAD' : 'SNELWEG'}</li>
-        {tripType === 'snelweg' && <li>{speedKmh} KM/H</li>}
-        <li>{tempC} °C</li>
-        {terrain !== 'vlak' && <li>{TERRAIN[terrain].label.toUpperCase()}</li>}
-        {scene.extraKg > 0 && <li>+{scene.extraKg} KG</li>}
+      <ul className="font-mono text-[12px] leading-[20px] tracking-[0.1em] pb-[30px] short:pb-7 text-left" aria-label="Waarmee gerekend is">
+        <li>{hasWeekly ? 'JOUW MIX' : 'STANDAARDMIX'}</li>
+        <li>{Math.round(mix.snel * 100)} % SNELWEG</li>
+        <li>{inputs.tempC} °C</li>
       </ul>
     </section>
   );

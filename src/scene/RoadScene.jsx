@@ -1,9 +1,9 @@
 import RoadSceneSVG from './svg/RoadSceneSVG.jsx';
 
 /**
- * De baan. Krijgt een kant-en-klaar `scene`-object en rekent zelf niets.
- * @param {{ scene: import('../scenario/types.js').Scene }} props
+ * De baan. Krijgt het plan van het rekenmodel (buildPlan) en rekent zelf niets.
+ * @param {{ plan: import('../scenario/types.js').Plan }} props
  */
-export default function RoadScene({ scene }) {
-  return <RoadSceneSVG scene={scene} />;
+export default function RoadScene({ plan }) {
+  return <RoadSceneSVG plan={plan} />;
 }

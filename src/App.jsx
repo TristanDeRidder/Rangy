@@ -4,6 +4,8 @@ import { useWeather } from './weather/useWeather.js';
 import RoadScene from './scene/RoadScene.jsx';
 import Topbar from './ui/Topbar.jsx';
 import Result from './ui/Result.jsx';
+import Tabs, { useSwipe } from './ui/Tabs.jsx';
+import WeekCard from './ui/WeekCard.jsx';
 import Controls from './ui/Controls.jsx';
 import Panel from './ui/Panel.jsx';
 import TripsPanel, { TripsFooter } from './ui/TripsPanel.jsx';
@@ -12,7 +14,7 @@ import HintDialog from './ui/HintDialog.jsx';
 import WeatherDialog from './ui/WeatherDialog.jsx';
 import WelcomeDialog, { welcomeSeen } from './ui/WelcomeDialog.jsx';
 import { IconArrow } from './ui/icons.jsx';
-import { btnPrimary } from './ui/cls.js';
+import { btnPrimary, card } from './ui/cls.js';
 
 const WIDE = '(min-width: 900px)';
 // ruimte voor de ingeklapte dock onderaan (balk 62 + tussenruimte 12 + knop 48 + onderrand 20),
@@ -52,10 +54,16 @@ function useMediaQuery(query) {
 
 export default function App() {
   // scene + setters = huidige interface (v1); plan (rekenmodel v2) is er voor de nieuwe schermen
-  const { scene, controls: setters, setLegacyTrips, setWind } = useScenario();
+  // plan = rekenmodel v2 (resultaat, baan, week); scene = v1, nog voor de omstandigheden, Mijn ritten en de Uitleg
+  const { scene, plan, controls: setters, setLegacyTrips, setWind } = useScenario();
   const { setTempC } = setters;
   const wide = useMediaQuery(WIDE);
   const [view, setView] = useState('overview'); // 'overview' | 'trips' | 'explain'
+  const [tab, setTab] = useState('baan'); // gsm: 'baan' | 'week'
+  const swipe = useSwipe(
+    () => setTab('week'),
+    () => setTab('baan'),
+  );
   const [topic, setTopic] = useState(null); // onderwerp in de Uitleg, null = overzicht
   const [hint, setHint] = useState(null); // onderwerp van de open "?"
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -111,24 +119,49 @@ export default function App() {
         <Topbar weather={weather} onPlace={() => setWeatherOpen(true)} onInfo={() => (view === 'explain' ? close() : explain())} />
 
         {wide ? (
-          <div className="grid grid-cols-[401px_1fr] gap-10 items-center max-w-378 mx-auto pt-6 px-12 pb-10 min-h-[calc(100vh-80px)]">
+          <div className="grid grid-cols-[380px_1fr_360px] gap-8 items-center max-w-378 mx-auto pt-6 px-12 pb-10 min-h-[calc(100vh-80px)]">
             <div className="flex flex-col gap-7">
-              <Result scene={scene} showLink onWinter={() => explain('temperatuur')} onCar={() => explain('referentiewagen')} />
+              <Result plan={plan} onCar={() => explain('referentiewagen')} />
               <Controls variant="panel" scene={scene} todayC={todayC} onHint={setHint} {...setters} />
               {cta}
             </div>
             <div className={`flex justify-center origin-[0%_55%] transition-transform duration-350 ease-soft ${view !== 'overview' ? 'scale-75' : ''}`}>
-              <RoadScene scene={scene} />
+              <RoadScene plan={plan} />
             </div>
+            {/* laptop: de week staat altijd naast de baan, geen tabs */}
+            <section className={`${card} py-2`} aria-label="Jouw week">
+              <WeekCard plan={plan} onChangeCharging={() => setView('trips')} onAddTrips={() => setView('trips')} />
+            </section>
           </div>
         ) : (
           <>
-            <Result scene={scene} onCar={() => explain('referentiewagen')} />
-            {/* vult de ruimte tussen resultaat en omstandigheden: scène in het midden = gelijke afstand erboven en eronder.
+            <Result plan={plan} onCar={() => explain('referentiewagen')} />
+            <Tabs
+              idBase="overzicht"
+              tabs={[
+                { id: 'baan', label: 'BAAN' },
+                { id: 'week', label: 'WEEK' },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
+            {/* vult de ruimte tussen tabs en omstandigheden. Swipen wisselt van tab (tikken op de tabs kan altijd).
                 Size-container: de baan schaalt mee met de hoogte die overblijft (zie sceneBox in cls.js).
                 Ruimte bovenaan: de labels van verre ritten steken boven de baan uit. */}
-            <div className="flex-1 min-h-0 flex flex-col justify-center w-full pt-9 pb-3 short:pt-8 short:pb-1.5 @container-size">
-              <RoadScene scene={scene} />
+            <div
+              role="tabpanel"
+              id={`overzicht-panel-${tab}`}
+              aria-labelledby={`overzicht-tab-${tab}`}
+              className="flex-1 min-h-0 w-full touch-pan-y overflow-y-auto"
+              {...swipe}
+            >
+              {tab === 'baan' ? (
+                <div className="h-full flex flex-col justify-center pt-9 pb-3 short:pt-8 short:pb-1.5 @container-size">
+                  <RoadScene plan={plan} />
+                </div>
+              ) : (
+                <WeekCard plan={plan} onChangeCharging={() => setView('trips')} onAddTrips={() => setView('trips')} />
+              )}
             </div>
             <div
               ref={dockRef}

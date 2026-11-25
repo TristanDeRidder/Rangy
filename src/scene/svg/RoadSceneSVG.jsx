@@ -12,6 +12,7 @@ const CX = W / 2;
 const HW_BOTTOM = 110; // halve breedte van de baan vooraan
 const HW_TOP = 5; // halve breedte aan de horizon
 const POLE = 34; // basislengte van een paal
+const TAG_H = 52; // hoogte van een label in tekeningeenheden (bij de ontwerpbreedte)
 
 const yOf = (t) => HOR + (BOT - HOR) * perspectiveY(t);
 const hwOf = (y) => HW_TOP + ((HW_BOTTOM - HW_TOP) * (y - HOR)) / (BOT - HOR);
@@ -21,76 +22,107 @@ const quad = (y1, y2) =>
 const pct = (v, total) => `${(v / total) * 100}%`;
 
 /**
- * SVG-weergave van de baan. De labels staan als HTML erboven (gedeelde Tag-component).
- * @param {{ scene: import('../../scenario/types.js').Scene }} props
+ * SVG-weergave van de baan: zeker bereik (groen, met raster), reserve van 10 % (gearceerd),
+ * marge (geel) en markeringen voor de drukste dag en de ritten die af en toe terugkomen.
+ * De labels staan als HTML erboven (Tag).
+ * @param {{ plan: import('../../scenario/types.js').Plan }} props
  */
-export default function RoadSceneSVG({ scene }) {
-  const yLow = yOf(scene.rangeT.low);
-  const yHigh = yOf(scene.rangeT.high);
+export default function RoadSceneSVG({ plan }) {
+  const { rangeKm, rangeT, markers } = plan;
+  const ySafe = yOf(rangeT.safe ?? rangeT.low);
+  const yLow = yOf(rangeT.low);
+  const yHigh = yOf(rangeT.high);
+  const yReserve = (ySafe + yLow) / 2;
 
   const cross = [];
-  for (let t = 0; t <= scene.rangeT.low; t += 0.05) cross.push(yOf(t));
+  for (let t = 0; t <= (rangeT.safe ?? rangeT.low); t += 0.05) cross.push(yOf(t));
   const along = [-1, -2 / 3, -1 / 3, 0, 1 / 3, 2 / 3, 1];
 
-  const marks = scene.trips.map((trip, i) => {
-    const { side, pole } = tagLayout(i);
-    const y = yOf(trip.t);
-    const x = xAt(side === 'left' ? -0.45 : 0.45, y);
+  // Een label links mag niet over de bereiklabels (links van de baan) vallen.
+  const labelZone = [yHigh - 10, yLow + 12];
+  const marks = markers.map((marker, i) => {
+    const layout = tagLayout(i);
+    const y = yOf(marker.t);
     const s = Math.max(5, (12 * hwOf(y)) / HW_BOTTOM);
-    return { trip, side, x, y, s, top: Math.max(14, y - POLE * pole - (s / 2)) };
+    let top = Math.max(14, y - POLE * layout.pole - s / 2);
+    let side = layout.side;
+    if (side === 'left' && top - TAG_H < labelZone[1] && top > labelZone[0]) {
+      // eerst proberen: label onder de bereiklabels (kortere paal), anders naar rechts
+      const below = labelZone[1] + TAG_H;
+      if (below <= y - s) top = below;
+      else side = 'right';
+    }
+    const x = xAt(side === 'left' ? -0.45 : 0.45, y);
+    return { marker, side, x, y, s, top };
   });
 
-  const label = `Baan met bereik tot ${Math.round(scene.rangeKm.low)} km zeker en tot ${Math.round(
-    scene.rangeKm.high,
-  )} km mogelijk. ${scene.trips.map((t) => `${t.name} ${t.km} km, ${t.type}: ${STATUS_LABEL[t.status]}`).join('. ')}.`;
+  const label = `Baan met bereik tot ${Math.round(rangeKm.low)} km zeker, ${Math.round(rangeKm.safe)} km met 10 % reserve en tot ${Math.round(
+    rangeKm.high,
+  )} km mogelijk.${marks.map(({ marker }) => ` ${marker.name} ${Math.round(marker.distanceKm)} km: ${STATUS_LABEL[marker.status]}.`).join('')}`;
 
   return (
     <div className={sceneBox}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
+        <defs>
+          <pattern id="reserve-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="5" height="5" fill={COLORS.reach} fillOpacity="0.3" />
+            <line x1="0" y1="0" x2="0" y2="5" stroke={COLORS.reach} strokeWidth="2.4" />
+          </pattern>
+        </defs>
         <polygon points={quad(BOT, HOR)} fill={COLORS.road} />
         <g stroke="#fff" strokeOpacity="0.55" strokeWidth="1.2">
           <line x1={xAt(-0.95, BOT)} y1={BOT} x2={xAt(-0.95, HOR)} y2={HOR} />
           <line x1={xAt(0.95, BOT)} y1={BOT} x2={xAt(0.95, HOR)} y2={HOR} />
         </g>
 
-        {/* Zeker bereik met raster */}
-        <polygon points={quad(BOT, yLow)} fill={COLORS.reach} fillOpacity="0.3" />
+        {/* Zeker bereik met raster, tot de reserve */}
+        <polygon points={quad(BOT, ySafe)} fill={COLORS.reach} fillOpacity="0.3" />
         <g stroke={COLORS.reach} strokeOpacity="0.9" strokeWidth="1">
           {along.map((f) => (
-            <line key={f} x1={xAt(f, BOT)} y1={BOT} x2={xAt(f, yLow)} y2={yLow} />
+            <line key={f} x1={xAt(f, BOT)} y1={BOT} x2={xAt(f, ySafe)} y2={ySafe} />
           ))}
           {cross.map((y) => (
             <line key={y} x1={xAt(-1, y)} y1={y} x2={xAt(1, y)} y2={y} />
           ))}
         </g>
+
+        {/* Reserve van 10 %: gearceerd tussen "zeker met reserve" en "zeker" */}
+        <polygon points={quad(ySafe, yLow)} fill="url(#reserve-hatch)" />
         <line x1={xAt(-1, yLow)} y1={yLow} x2={xAt(1, yLow)} y2={yLow} stroke={COLORS.reach} strokeWidth="2" />
 
         {/* Marge */}
         <polygon points={quad(yLow, yHigh)} fill={COLORS.margin} fillOpacity="0.55" />
 
-        {/* Hulplijnen 310 / 380 naar links */}
+        {/* Hulplijnen zeker / mogelijk naar links, reserve naar rechts */}
         <g stroke={COLORS.ink} strokeDasharray="3 3">
           <line x1="52" y1={yLow} x2={xAt(-1, yLow) - 2} y2={yLow} />
           <line x1="52" y1={yHigh} x2={xAt(-1, yHigh) - 2} y2={yHigh} />
+          <line x1={xAt(1, yReserve) + 2} y1={yReserve} x2={xAt(1, yReserve) + 40} y2={yReserve} />
         </g>
 
         {/* Markeringen op de baan en palen */}
-        {marks.map(({ trip, x, y, s, top }) => (
-          <g key={trip.id} opacity={trip.dim ? 0.5 : 1}>
-            <rect x={x - s / 2} y={y - s / 2} width={s} height={s} fill={STATUS_COLOR[trip.status]} />
-            <line x1={x} y1={y} x2={x} y2={top} stroke={STATUS_COLOR[trip.status]} strokeWidth="1.5" />
+        {marks.map(({ marker, x, y, s, top }) => (
+          <g key={marker.id}>
+            <rect x={x - s / 2} y={y - s / 2} width={s} height={s} fill={STATUS_COLOR[marker.status]} />
+            <line x1={x} y1={y} x2={x} y2={top} stroke={STATUS_COLOR[marker.status]} strokeWidth="1.5" />
           </g>
         ))}
 
         <Car />
       </svg>
 
-      {/* HTML-laag: bereiklabels en ritlabels */}
+      {/* HTML-laag: bereiklabels, reserve en markeringen */}
       <div className={sceneOverlay}>
-        <span className={rangeLabel} style={{ top: pct(yHigh, H) }}>{Math.round(scene.rangeKm.high / 10) * 10} KM</span>
-        <span className={rangeLabel} style={{ top: pct(yLow, H) }}>{Math.round(scene.rangeKm.low / 10) * 10} KM</span>
-        {marks.map(({ trip, side, x, top }) => (
-          <Tag key={trip.id} trip={trip} side={side} x={pct(x, W)} y={pct(top, H)} />
+        <span className={rangeLabel} style={{ top: pct(yHigh, H) }}>{Math.round(rangeKm.high / 10) * 10} KM</span>
+        <span className={rangeLabel} style={{ top: pct(yLow, H) }}>{Math.round(rangeKm.low / 10) * 10} KM</span>
+        <span
+          className="absolute -translate-y-1/2 font-mono text-[0.83em] text-muted tracking-[0.06em] whitespace-nowrap"
+          style={{ top: pct(yReserve, H), left: pct(xAt(1, yReserve) + 44, W) }}
+        >
+          RESERVE 10 %
+        </span>
+        {marks.map(({ marker, side, x, top }) => (
+          <Tag key={marker.id} marker={marker} side={side} x={pct(x, W)} y={pct(top, H)} />
         ))}
       </div>
     </div>

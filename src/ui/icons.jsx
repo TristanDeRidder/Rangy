@@ -29,3 +29,10 @@ export const IconLock = () => (
 export const IconPin = () => (
   <svg {...base} width={16} height={16}><path {...stroke} strokeWidth={1.8} d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21Z" /><circle {...stroke} strokeWidth={1.8} cx="12" cy="9.5" r="2.5" /></svg>
 );
+/** Laden (bliksem), uit het ontwerp (icon/laden). */
+export const IconBolt = ({ size = 14, title }) => (
+  <svg width={size} height={size} viewBox="0 0 14 14" fill="none" aria-hidden={title ? undefined : true} role={title ? 'img' : undefined}>
+    {title && <title>{title}</title>}
+    <path d="M8.16667 0.583008L1.75 8.16634H6.41667L5.25 13.4163L12.25 5.24967H7.58333L8.16667 0.583008Z" fill="#FF7A3D" />
+  </svg>
+);
