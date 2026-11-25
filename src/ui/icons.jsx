@@ -45,3 +45,16 @@ export const IconWind = ({ toDeg = 0 }) => (
     <path d="M6.3638 13.4347L13.4349 6.36358M13.4349 12.0204V6.36358H7.77802" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+/** Plaats (in invulvelden voor een gemeente), uit het ontwerp. */
+export const IconPlace = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M8 14.5C8 14.5 13 10 13 6.5C13 3.7 10.8 1.5 8 1.5C5.2 1.5 3 3.7 3 6.5C3 10 8 14.5 8 14.5Z" strokeWidth="1.3" stroke="currentColor" />
+    <path d="M9.79995 6.5002C9.79995 7.49431 8.99406 8.3002 7.99995 8.3002C7.00584 8.3002 6.19995 7.49431 6.19995 6.5002C6.19995 5.50608 7.00584 4.7002 7.99995 4.7002C8.99406 4.7002 9.79995 5.50608 9.79995 6.5002Z" strokeWidth="1.3" stroke="currentColor" />
+  </svg>
+);
+/** Kleine pijl voor uitklapbare blokken (16 px), uit het ontwerp. */
+export const IconChevron16 = ({ up }) => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d={up ? 'M3 10L8 5L13 10' : 'M3 6L8 11L13 6'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
+  </svg>
+);

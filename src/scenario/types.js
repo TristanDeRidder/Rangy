@@ -84,6 +84,7 @@ export {};
  * @property {number} weekKm
  * @property {{ id:string, name:string, distanceKm:number, share:Share, status:TripStatus }[]} occasional
  * @property {{ id:string, name:string, distanceKm:number, status:TripStatus, t:number }[]} markers  voor de baan
+ * @property {Object<string, { distanceKm:number, share:Share, status:TripStatus }>} tripStats  per rit, één keer de rit
  * @property {Charging} charging
  * @property {{ allDaysOk: boolean }} daily  zou elke dag lukken met dagelijks laden?
  * @property {WeekPlan | null} week  null bij thuis laden

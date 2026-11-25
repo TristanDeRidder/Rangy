@@ -3,7 +3,7 @@ import { buildPlan } from './plan.js';
 import { buildScene } from './buildScene.js';
 import { PRESETS, normalizeTrip, normalizeSituation } from './trips.js';
 import { loadTrips, saveTrips, loadSituation, saveSituation } from './storage.js';
-import { toLegacyTrip, fromLegacyTrips } from './legacy.js';
+import { toLegacyTrip } from './legacy.js';
 import { municipalityByNis } from '../route/municipalities.js';
 import { fetchRoute } from '../route/routeApi.js';
 
@@ -119,8 +119,6 @@ export function useScenario(initial = {}) {
     [setSituation, routeTrip],
   );
 
-  /** Ritten uit de huidige Mijn ritten (formaat v1). */
-  const setLegacyTrips = useCallback((list) => setTrips((cur) => fromLegacyTrips(list, cur)), [setTrips]);
 
   const plan = useMemo(
     () => buildPlan({ speedKmh, tempC, wind, trips, situation }),
@@ -151,8 +149,7 @@ export function useScenario(initial = {}) {
     routeTrip,
     setWind,
     controls,
-    // interface v1, verdwijnt met de nieuwe schermen
+    // v1, nog voor de Uitleg; verdwijnt in de volgende stap
     scene,
-    setLegacyTrips,
   };
 }

@@ -53,13 +53,17 @@ function useMediaQuery(query) {
 }
 
 export default function App() {
-  // scene + setters = huidige interface (v1); plan (rekenmodel v2) is er voor de nieuwe schermen
-  // plan = rekenmodel v2 (resultaat, baan, week); scene = v1, nog voor de omstandigheden, Mijn ritten en de Uitleg
-  const { scene, plan, controls: setters, setLegacyTrips, setWind } = useScenario();
+  // plan = rekenmodel v2 (resultaat, baan, week, Mijn ritten); scene = v1, nog voor de Uitleg
+  const { scene, plan, trips, situation, controls: setters, setWind, ...actions } = useScenario();
   const { setTempC } = setters;
   const wide = useMediaQuery(WIDE);
   const [view, setView] = useState('overview'); // 'overview' | 'trips' | 'explain'
   const [tab, setTab] = useState('baan'); // gsm: 'baan' | 'week'
+  const [tripsFocus, setTripsFocus] = useState(null); // 'situatie': Mijn ritten opent met Jouw situatie open
+  const openTrips = (focus = null) => {
+    setTripsFocus(focus);
+    setView('trips');
+  };
   const swipe = useSwipe(
     () => setTab('week'),
     () => setTab('baan'),
@@ -88,7 +92,6 @@ export default function App() {
   const dockH = useDockHeight(dockRef, !wide && !sheetOpen);
 
   const close = useCallback(() => setView('overview'), []);
-  const toggle = (v) => setView((cur) => (cur === v ? 'overview' : v));
   /** Uitleg openen, op het overzicht (null) of meteen bij een onderwerp. */
   const explain = (id = null) => {
     setTopic(id);
@@ -102,8 +105,8 @@ export default function App() {
   }, [wide, view]);
 
   const cta = (
-    <button type="button" className={`${btnPrimary} justify-between px-5`} onClick={() => toggle('trips')} aria-expanded={view === 'trips'}>
-      <span>MIJN RITTEN · {scene.trips.length}</span>
+    <button type="button" className={`${btnPrimary} justify-between px-5`} onClick={() => (view === 'trips' ? close() : openTrips())} aria-expanded={view === 'trips'}>
+      <span>MIJN RITTEN · {trips.length}</span>
       <IconArrow />
     </button>
   );
@@ -130,7 +133,7 @@ export default function App() {
             </div>
             {/* laptop: de week staat altijd naast de baan, geen tabs */}
             <section className={`${card} py-2`} aria-label="Jouw week">
-              <WeekCard plan={plan} onChangeCharging={() => setView('trips')} onAddTrips={() => setView('trips')} />
+              <WeekCard plan={plan} onChangeCharging={() => openTrips('situatie')} onAddTrips={() => openTrips()} />
             </section>
           </div>
         ) : (
@@ -160,7 +163,7 @@ export default function App() {
                   <RoadScene plan={plan} />
                 </div>
               ) : (
-                <WeekCard plan={plan} onChangeCharging={() => setView('trips')} onAddTrips={() => setView('trips')} />
+                <WeekCard plan={plan} onChangeCharging={() => openTrips('situatie')} onAddTrips={() => openTrips()} />
               )}
             </div>
             <div
@@ -204,7 +207,7 @@ export default function App() {
       />
 
       <Panel title="Mijn ritten" open={view === 'trips'} onClose={close} wide={wide} footer={<TripsFooter onDone={close} />}>
-        <TripsPanel scene={scene} setTrips={setLegacyTrips} />
+        <TripsPanel key={tripsFocus ?? 'ritten'} plan={plan} trips={trips} situation={situation} actions={actions} focus={tripsFocus} />
       </Panel>
       <Panel
         title={explainTopic ? explainTopic.title : 'Uitleg'}

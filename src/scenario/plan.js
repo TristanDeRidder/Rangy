@@ -241,6 +241,14 @@ export function buildPlan(input) {
     };
   });
 
+  // per rit (vast of af en toe): één keer de rit, voor de lijst in Mijn ritten
+  const tripStats = Object.fromEntries(
+    trips.map((t) => {
+      const share = tripShare(t, inputs);
+      return [t.id, { distanceKm: tripDistance(t), share, status: shareStatus(share) }];
+    }),
+  );
+
   // dagelijks laden (thuis of op het werk): elke dag begint vol
   const daily = {
     allDaysOk: days.every((d) => !d.status || d.status === 'haalbaar'),
@@ -262,7 +270,7 @@ export function buildPlan(input) {
           },
         ]
       : []),
-    ...occ,
+    ...occ.filter((o) => o.distanceKm > 0), // een nieuwe rit zonder afstand staat niet op de baan
   ];
   const maxKm = scaleMaxKm(
     range.high,
@@ -284,6 +292,7 @@ export function buildPlan(input) {
     busiest,
     weekKm,
     occasional: occ,
+    tripStats,
     markers: markers.map((m) => ({ ...m, t: toT(m.distanceKm, maxKm) })),
     charging: situation.charging,
     daily,
