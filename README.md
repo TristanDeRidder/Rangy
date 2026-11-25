@@ -97,7 +97,8 @@ De info-knop opent het overzicht, met drie groepen: Basis (hoe werkt Rangy, refe
 
 ## Rekenmodel v2 (branch `feature/v2-calculation-model`)
 
-Nieuwe, losse modules naast het bestaande model. De schermen gebruiken ze nog niet; dat volgt in een volgende stap.
+Nieuwe modules naast het bestaande model. `useScenario` rekent al met `buildPlan`; de huidige schermen tonen nog
+de scène van v1, tot de nieuwe interface er is.
 
 ```
 scenario/
@@ -109,6 +110,9 @@ scenario/
               Uit te zetten met WIND_ENABLED = false of buildPlan({ useWind: false }).
   warmup.js   opwarmen bij een koude start (INL) en voorverwarmen aan de thuislader (DOE/Argonne).
               Uit te zetten met WARMUP_ENABLED = false of buildPlan({ useWarmup: false }).
+  storage.js  ritten en "Jouw situatie" op het toestel bewaren (rangy.v2.*); ritten uit v1 worden omgezet.
+  legacy.js   tijdelijke brug naar de interface van v1 (stad/snelweg in Mijn ritten); weg met de nieuwe schermen.
+  useScenario geeft `plan` (v2) en `scene` (v1) terug, plus addTrip/updateTrip/removeTrip/clearTrips en setSituation.
   plan.js     buildPlan(): eigen mix → groot getal, per dag verbruik en status, drukste dag,
               week zonder dagelijks laden (eigen laaddagen of voorstel van Rangy, extra laadbeurten),
               ritten die af en toe terugkomen.

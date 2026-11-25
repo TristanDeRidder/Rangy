@@ -52,7 +52,8 @@ function useMediaQuery(query) {
 }
 
 export default function App() {
-  const { scene, setTrips, ...setters } = useScenario();
+  // scene + setters = huidige interface (v1); plan (rekenmodel v2) is er voor de nieuwe schermen
+  const { scene, controls: setters, setLegacyTrips, setWind } = useScenario();
   const { setTempC } = setters;
   const [mode] = useState(getViewMode); // '3d' of 'svg', zie scene/shared/viewMode.js
   const wide = useMediaQuery(WIDE);
@@ -69,6 +70,13 @@ export default function App() {
   useEffect(() => {
     if (todayC !== undefined) setTempC(Math.min(30, Math.max(-10, todayC)));
   }, [todayC, weather.place.lat, weather.place.lon, setTempC]);
+
+  // wind van vandaag naar het rekenmodel (zie scenario/wind.js); geen weer = geen wind
+  const windMs = weather.status === 'ready' ? weather.data.windMs : null;
+  const windDeg = weather.status === 'ready' ? weather.data.windDeg : null;
+  useEffect(() => {
+    setWind(windMs != null ? { speedMs: windMs, fromDeg: windDeg ?? 0 } : null);
+  }, [windMs, windDeg, setWind]);
   const mainRef = useRef(null);
   const dockRef = useRef(null);
   const dockH = useDockHeight(dockRef, !wide && !sheetOpen);
@@ -164,7 +172,7 @@ export default function App() {
       />
 
       <Panel title="Mijn ritten" open={view === 'trips'} onClose={close} wide={wide} footer={<TripsFooter onDone={close} />}>
-        <TripsPanel scene={scene} setTrips={setTrips} />
+        <TripsPanel scene={scene} setTrips={setLegacyTrips} />
       </Panel>
       <Panel
         title={explainTopic ? explainTopic.title : 'Uitleg'}

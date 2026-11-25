@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { buildPlan } from './plan.js';
 import { buildScene } from './buildScene.js';
-
-const STORAGE_KEY = 'rangy.trips';
+import { PRESETS, normalizeTrip, normalizeSituation } from './trips.js';
+import { loadTrips, saveTrips, loadSituation, saveSituation } from './storage.js';
+import { toLegacyTrip, fromLegacyTrips } from './legacy.js';
 
 /** Starttemperatuur van de slider, tot het echte weer binnen is (zie weather/useWeather.js). */
 export const TODAY = { tempC: 8 };
 
+/** Ritten bij een eerste bezoek, tot het nieuwe welkomstvenster ritten laat kiezen (formaat v1, worden omgezet). */
 const DEFAULT_TRIPS = [
   { id: 'werk', name: 'Woon-werk', km: 45, type: 'stad' },
   { id: 'weekend', name: 'Weekendrit', km: 150, type: 'snelweg' },
@@ -13,43 +16,101 @@ const DEFAULT_TRIPS = [
   { id: 'vakantie', name: 'Vakantie', km: 600, type: 'snelweg' },
 ];
 
-function loadTrips() {
+const storage = () => {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    // oudere opgeslagen ritten hebben nog geen type: die waren snelwegritten
-    if (Array.isArray(saved) && saved.length) return saved.map((t) => ({ type: 'snelweg', ...t }));
+    return window.localStorage;
   } catch {
-    /* geen opslag beschikbaar: standaardritten */
+    return undefined;
   }
-  return DEFAULT_TRIPS;
-}
+};
 
 /**
- * Houdt de keuzes van de gebruiker bij en geeft de scènebeschrijving terug.
- * Ritten blijven op het toestel (localStorage), zonder account of server.
+ * Houdt de keuzes van de gebruiker bij en geeft terug wat de schermen nodig hebben.
+ *  - plan: het rekenmodel v2 (buildPlan): eigen mix, dagen, drukste dag, week, ritten die af en toe terugkomen
+ *  - scene: de scène van v1 (buildScene) voor de huidige interface; verdwijnt met de nieuwe schermen
+ * Ritten en "Jouw situatie" blijven op het toestel (localStorage), zonder account of server.
  */
 export function useScenario(initial = {}) {
-  const [tripType, setTripType] = useState(initial.tripType ?? 'snelweg');
+  // omstandigheden
   const [speedKmh, setSpeedKmh] = useState(initial.speedKmh ?? 110);
   const [tempC, setTempC] = useState(initial.tempC ?? TODAY.tempC);
+  const [wind, setWind] = useState(initial.wind ?? null); // { speedMs, fromDeg } uit het weerbericht
+
+  // ritten en situatie (v2)
+  const [trips, setTripsState] = useState(() => loadTrips(storage(), DEFAULT_TRIPS));
+  const [situation, setSituationState] = useState(() => loadSituation(storage()));
+
+  // alleen voor de interface van v1
+  const [tripType, setTripType] = useState(initial.tripType ?? 'snelweg');
   const [terrain, setTerrain] = useState(initial.terrain ?? 'vlak');
   const [passengers, setPassengers] = useState(initial.passengers ?? 0);
   const [bags, setBags] = useState(initial.bags ?? 0);
-  const [trips, setTripsState] = useState(loadTrips);
 
-  const setTrips = (next) => {
-    setTripsState(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      /* opslaan mislukt: de ritten blijven tot de pagina sluit */
-    }
-  };
+  /** Alle ritten vervangen (nieuw formaat). Accepteert ook een functie van de huidige ritten. */
+  const setTrips = useCallback((next) => {
+    setTripsState((cur) => {
+      const list = (typeof next === 'function' ? next(cur) : next).map(normalizeTrip);
+      saveTrips(storage(), list); // mislukt het, dan blijven de ritten tot de pagina sluit
+      return list;
+    });
+  }, []);
 
-  const scene = useMemo(
-    () => buildScene({ tripType, speedKmh, tempC, terrain, passengers, bags, trips }),
-    [tripType, speedKmh, tempC, terrain, passengers, bags, trips],
+  /** Rit toevoegen: een rit, of de naam van een voorbeeldrit (zie PRESETS). Geeft de nieuwe rit terug. */
+  const addTrip = useCallback(
+    (tripOrPreset) => {
+      const t = normalizeTrip(typeof tripOrPreset === 'string' ? { ...PRESETS[tripOrPreset] } : tripOrPreset);
+      setTrips((cur) => [...cur, t]);
+      return t;
+    },
+    [setTrips],
+  );
+  const updateTrip = useCallback(
+    (id, patch) => setTrips((cur) => cur.map((t) => (t.id === id ? { ...t, ...patch } : t))),
+    [setTrips],
+  );
+  const removeTrip = useCallback((id) => setTrips((cur) => cur.filter((t) => t.id !== id)), [setTrips]);
+  const clearTrips = useCallback(() => setTrips([]), [setTrips]);
+
+  /** "Jouw situatie" aanpassen (alleen de velden die veranderen). */
+  const setSituation = useCallback((patch) => {
+    setSituationState((cur) => {
+      const next = normalizeSituation({ ...cur, ...(typeof patch === 'function' ? patch(cur) : patch) });
+      saveSituation(storage(), next);
+      return next;
+    });
+  }, []);
+
+  /** Ritten uit de huidige Mijn ritten (formaat v1). */
+  const setLegacyTrips = useCallback((list) => setTrips((cur) => fromLegacyTrips(list, cur)), [setTrips]);
+
+  const plan = useMemo(
+    () => buildPlan({ speedKmh, tempC, wind, trips, situation }),
+    [speedKmh, tempC, wind, trips, situation],
   );
 
-  return { scene, setTripType, setSpeedKmh, setTempC, setTerrain, setPassengers, setBags, setTrips };
+  const legacyTrips = useMemo(() => trips.map(toLegacyTrip), [trips]);
+  const scene = useMemo(
+    () => buildScene({ tripType, speedKmh, tempC, terrain, passengers, bags, trips: legacyTrips }),
+    [tripType, speedKmh, tempC, terrain, passengers, bags, legacyTrips],
+  );
+
+  // omstandigheden (ook voor de interface v1, zie Controls); setters van useState veranderen niet
+  const controls = useMemo(() => ({ setSpeedKmh, setTempC, setTripType, setTerrain, setPassengers, setBags }), []);
+
+  return {
+    plan,
+    trips,
+    situation,
+    setTrips,
+    addTrip,
+    updateTrip,
+    removeTrip,
+    clearTrips,
+    setSituation,
+    setWind,
+    controls,
+    // interface v1, verdwijnt met de nieuwe schermen
+    scene,
+    setLegacyTrips,
+  };
 }
