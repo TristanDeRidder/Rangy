@@ -93,10 +93,11 @@ function Fields({ inputs, weatherReady, setSpeedKmh, setTempC, todayC, onHint })
 /**
  * Omstandigheden.
  *  - variant "sheet" (gsm): ingeklapt als balk met de huidige instellingen, uitgeklapt als paneel.
+ *    Open- en dichtvegen kan via de greep en de kop (dragHandlers, zie useSheetDrag).
  *  - variant "panel" (laptop): altijd open.
  * @param {{ variant: 'sheet'|'panel', open?: boolean, onToggle?: Function, inputs: object, weatherReady: boolean }} props
  */
-export default function Controls({ variant, open, onToggle, inputs, weatherReady, ...rest }) {
+export default function Controls({ variant, open, onToggle, dragHandlers, inputs, weatherReady, ...rest }) {
   const summary = summaryOf(inputs, weatherReady);
   const fields = <Fields inputs={inputs} weatherReady={weatherReady} {...rest} />;
 
@@ -111,20 +112,23 @@ export default function Controls({ variant, open, onToggle, inputs, weatherReady
 
   return (
     <section className="flex flex-col">
-      {open && <div className="w-10 h-1 mb-3.5 rounded-full bg-line self-center" aria-hidden="true" />}
-      <button
-        type="button"
-        className={`flex justify-between items-center gap-3 w-full bg-surface text-left ${open ? '' : `${card} py-3 pr-3 pl-4`}`}
-        aria-expanded={open}
-        aria-controls="omstandigheden"
-        onClick={onToggle}
-      >
-        <span className="flex flex-col gap-1 text-[12px] min-w-0">
-          <span className={eyebrow}>OMSTANDIGHEDEN</span>
-          <span className={`${mono} font-semibold`}>{summary}</span>
-        </span>
-        <span className="size-9 shrink-0 rounded-full bg-[#efefef] grid place-items-center">{open ? <IconChevronDown /> : <IconChevronUp />}</span>
-      </button>
+      {/* greep + kop: hier kan je vegen (touch-none: de browser scrolt dan niet mee) */}
+      <div className="flex flex-col touch-none" {...dragHandlers}>
+        {open && <div className="w-10 h-1 mb-3.5 rounded-full bg-line self-center" aria-hidden="true" />}
+        <button
+          type="button"
+          className={`flex justify-between items-center gap-3 w-full bg-surface text-left ${open ? '' : `${card} py-3 pr-3 pl-4`}`}
+          aria-expanded={open}
+          aria-controls="omstandigheden"
+          onClick={onToggle}
+        >
+          <span className="flex flex-col gap-1 text-[12px] min-w-0">
+            <span className={eyebrow}>OMSTANDIGHEDEN</span>
+            <span className={`${mono} font-semibold`}>{summary}</span>
+          </span>
+          <span className="size-9 shrink-0 rounded-full bg-[#efefef] grid place-items-center">{open ? <IconChevronDown /> : <IconChevronUp />}</span>
+        </button>
+      </div>
       <div id="omstandigheden" className={`grid transition-[grid-template-rows,opacity] duration-350 ease-soft ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`} inert={open ? undefined : 'true'}>
         <div className="min-h-0 overflow-hidden">
           {/* past dit niet op een kleine gsm, dan scrolt dit deel en blijft de knop eronder staan.

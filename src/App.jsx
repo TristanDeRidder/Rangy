@@ -13,6 +13,7 @@ import ExplainPanel, { topicById } from './ui/explain/ExplainPanel.jsx';
 import HintDialog from './ui/HintDialog.jsx';
 import WeatherDialog from './ui/WeatherDialog.jsx';
 import WelcomeDialog, { welcomeSeen } from './ui/WelcomeDialog.jsx';
+import { useSheetDrag } from './ui/useSheetDrag.js';
 import { IconArrow } from './ui/icons.jsx';
 import { btnPrimary, card } from './ui/cls.js';
 
@@ -63,6 +64,7 @@ export default function App() {
   const openTrips = (focus = null) => {
     setTripsFocus(focus);
     setView('trips');
+    setSheetOpen(false); // terug van Mijn ritten: omstandigheden dicht, zodat de baan en de week zichtbaar zijn
   };
   const swipe = useSwipe(
     () => setTab('week'),
@@ -71,6 +73,7 @@ export default function App() {
   const [topic, setTopic] = useState(null); // onderwerp in de Uitleg, null = overzicht
   const [hint, setHint] = useState(null); // onderwerp van de open "?"
   const [sheetOpen, setSheetOpen] = useState(true);
+  const sheetDrag = useSheetDrag({ open: sheetOpen, onOpen: () => setSheetOpen(true), onClose: () => setSheetOpen(false) });
   const weather = useWeather();
   const [weatherOpen, setWeatherOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(() => !welcomeSeen());
@@ -168,14 +171,16 @@ export default function App() {
             </div>
             <div
               ref={dockRef}
-              className={`fixed inset-x-0 bottom-0 mx-auto max-w-120 flex flex-col gap-3 px-5 pb-[calc(20px+env(safe-area-inset-bottom))] transition-[background,box-shadow] duration-350 ease-soft ${
+              className={`fixed inset-x-0 bottom-0 mx-auto max-w-120 flex flex-col gap-3 px-5 pb-[calc(20px+env(safe-area-inset-bottom))] transition-[background,box-shadow,translate] duration-350 ease-soft ${
                 sheetOpen ? 'bg-surface border border-line rounded-t-3xl shadow-[0_-4px_24px_rgb(0_0_0/0.12)] pt-3' : ''
               }`}
+              style={{ translate: `0 ${sheetDrag.dy}px`, transition: sheetDrag.dragging ? 'none' : undefined }}
             >
               <Controls
                 variant="sheet"
                 open={sheetOpen}
                 onToggle={() => setSheetOpen((o) => !o)}
+                dragHandlers={sheetDrag.handlers}
                 inputs={plan.inputs}
                 weatherReady={weather.status === 'ready'}
                 todayC={todayC}
