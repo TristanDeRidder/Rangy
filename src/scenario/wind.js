@@ -4,7 +4,7 @@
  * Methode (natuurkunde, afgesteld op metingen):
  *  - de luchtweerstand rekent met de luchtsnelheid t.o.v. de auto (zie aeroForce in model.js)
  *  - wind wordt op 10 m hoogte gemeten en is bij de grond zwakker: GROUND_FACTOR
- *  - lucht die schuin aanstroomt geeft meer weerstand: YAW_COEFF (Askerdal et al., 2023)
+ *  - lucht die schuin aanstroomt geeft meer weerstand: YAW_COEFF (Askerdal et al., 2024)
  *  - GROUND_FACTOR en YAW_COEFF zijn afgesteld op rijdata van Tesla Model 3's bij 100–120 km/u
  *    (Bäcker, 2021): 10 m/s tegenwind = +19 %, 10 m/s zijwind = +8 %
  *  - volgens de natuurkunde helpt 10 m/s rugwind dan −16,5 %, gemeten is maar −6 %.

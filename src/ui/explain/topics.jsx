@@ -9,7 +9,7 @@
  */
 import { useMemo } from 'react';
 import WinterPanel from '../WinterPanel.jsx';
-import { speedRows, roadRows, loadRows, terrainRows, carFacts, windRows, warmupRows, BASE } from '../../scenario/explain.js';
+import { speedRows, speedVariation, roadRows, loadRows, terrainRows, carFacts, windRows, warmupRows, BASE } from '../../scenario/explain.js';
 import { TERRAIN, KG_PER_PASSENGER, KG_PER_BAG } from '../../scenario/vehicle.js';
 import { RESERVE, EXPRES_LIMIT_KMH, SPEED_TOLERANCE_KMH } from '../../scenario/roads.js';
 import { CHARGE_FROM, CHARGE_TO } from '../../scenario/plan.js';
@@ -28,7 +28,10 @@ const AT_20 = `${BASE.tempC} °C · VLAK · ZONDER LADING · ZONDER WIND · BERE
  * Waarom precies deze wagen? Eigen motivatie, met bron. Zolang dit leeg is,
  * wordt het blok op de pagina Referentiewagen niet getoond.
  */
-const WHY_THIS_CAR = null;
+const WHY_THIS_CAR =
+  'De Model Y was in 2024 de meest ingeschreven elektrische wagen in België: 13.223 nieuwe inschrijvingen, waarvan 9.017 door bedrijven ' +
+  '(Febiac, 2025a). Het is dus een wagen die in België veel rondrijdt, vaak als bedrijfswagen. Bovendien is er veel data over beschikbaar, ' +
+  'zowel uit primaire bronnen (zoals Tesla zelf en onafhankelijke rijtests) als uit secundaire bronnen (zoals EV Database).';
 
 export const GROUPS = [
   { id: 'basis', label: 'BASIS' },
@@ -329,6 +332,7 @@ function Model() {
 
 function Speed() {
   const rows = useMemo(() => speedRows(), []);
+  const v = useMemo(() => speedVariation(), []);
   return (
     <>
       <Lead>Met de slider stel je in hoe snel je op de snelweg rijdt. Hoe sneller, hoe meer energie elke kilometer kost.</Lead>
@@ -341,7 +345,27 @@ function Speed() {
         Op de andere wegen speelt de slider geen rol. In de bebouwde kom volgt Rangy een testcyclus, op de expresweg de limiet ± {SPEED_TOLERANCE_KMH}{' '}
         km/u. Kent de route een limiet op de snelweg, dan rijdt Rangy daar nooit sneller dan die limiet + {SPEED_TOLERANCE_KMH} km/u.
       </P>
-      <Note>De afwijking van ± {SPEED_TOLERANCE_KMH} km/u rond de limiet: eigen aanname.</Note>
+      <H>CONSTANT OF WISSELEND</H>
+      <P>
+        De slider is je kruissnelheid: de snelheid die je meestal aanhoudt. Rangy rekent alsof je die constant rijdt. Rij je afwisselend trager en
+        sneller, dan kost dat meer, ook al is het gemiddelde hetzelfde. De snelle stukken kosten meer extra dan de trage sparen, omdat de
+        luchtweerstand met het kwadraat stijgt.
+      </P>
+      <RangeBars
+        rows={[
+          { label: `CONSTANT ${v.avg} KM/H`, band: v.constant },
+          { label: `AFWISSELEND ${v.slowKmh} EN ${v.fastKmh} KM/H`, band: v.varied },
+        ]}
+        caption={`SNELWEG · ELK DE HELFT VAN DE AFSTAND · ${AT_20}`}
+      />
+      <P>
+        Dat scheelt ongeveer {nl1(v.lossPct)} %. Daarbovenop kost elke keer optrekken energie, en bij het remmen win je maar een deel terug. Dat
+        rekent Rangy niet mee: wie vaak versnelt en remt, komt minder ver dan Rangy toont.
+      </P>
+      <Note>
+        De afwijking van ± {SPEED_TOLERANCE_KMH} km/u rond de limiet: eigen aanname. Constant tegenover afwisselend: eigen berekening met het model.
+        Bij het remmen wint de wagen ongeveer 60 % terug (Armenta-Déu &amp; Cortés, 2023).
+      </Note>
     </>
   );
 }
@@ -504,26 +528,147 @@ function Terrain() {
 
 /* ---------- Over deze schatting ---------- */
 
+/**
+ * Bronnenlijst in APA, gelijk aan de bundel. `use`: waarvoor Rangy de bron gebruikt.
+ * Titels die in APA cursief staan, staan tussen <i>.
+ */
 const SOURCES = [
-  ['Tesla (z.d.)', 'rijklaar gewicht'],
-  ['EV Database (z.d.)', 'bruikbare batterij, een variant van de verwarming, referentietemperatuur'],
-  ['Verordening (EU) 1230/2012', 'standaardmassa bestuurder en passagier'],
-  ['DOE & EPA (z.d.)', 'rendement van batterij tot wiel'],
-  ['Armenta-Déu & Cortés (2023)', 'terugwinning bergaf en bij remmen'],
-  ['Carlson (2015)', 'basisverbruik elektronica'],
-  ['Argue (2023)', 'wanneer verwarming en airco aanspringen'],
-  ['Li et al. (2021)', 'verbruik van de airco'],
-  ['Zhao et al. (2022)', 'capaciteit en rendement bij kou'],
-  ['WLTC klasse 3b', 'testcyclus voor de bebouwde kom en de expresweg'],
-  ['Bäcker (2021), A Better Routeplanner', 'effect van tegen-, zij- en rugwind'],
-  ['Askerdal et al. (2024)', 'luchtweerstand bij schuine wind'],
-  ['Salisbury (2016), Idaho National Laboratory', 'extra verbruik bij een koude start'],
-  ['Walsh et al. (2024), U.S. Department of Energy', 'warmtepomp en voorverwarmen bij kou'],
-  ['ETSC (2017)', 'snelheidslimieten buiten de bebouwde kom in Vlaanderen'],
-  ['API Ninjas', 'temperatuur en wind van vandaag'],
-  ['GraphHopper', 'routes', 'https://www.graphhopper.com/attribution/'],
-  ['© OpenStreetMap-bijdragers (ODbL)', 'wegen, wegklassen en snelheidslimieten in de routes', 'https://www.openstreetmap.org/copyright'],
-  ['FOD BOSA, BeST Address (CC BY 4.0)', 'adressen voor het midden van elke gemeente, verwerkt door LeKoala (belgian-geography)'],
+  { use: 'temperatuur en wind van vandaag', ref: <>API Ninjas. (z.d.). <i>Weather API</i>.</>, url: 'https://api-ninjas.com/api/weather' },
+  {
+    use: 'wanneer verwarming en airco aanspringen',
+    ref: <>Argue, C. (2023, 17 augustus). <i>To what degree does temperature impact EV range?</i> Geotab. Oorspronkelijk gepubliceerd op 25 mei 2020.</>,
+    url: 'https://www.geotab.com/uk/blog/ev-range/',
+  },
+  {
+    use: 'terugwinning bergaf en bij remmen',
+    ref: <>Armenta-Déu, C., &amp; Cortés, H. (2023). Analysis of kinetic energy recovery systems in electric vehicles. <i>Vehicles, 5</i>(2), 387–403.</>,
+    url: 'https://doi.org/10.3390/vehicles5020022',
+  },
+  {
+    use: 'luchtweerstand bij schuine wind',
+    ref: (
+      <>
+        Askerdal, M., Fredriksson, J., &amp; Laine, L. (2024). Development of simplified air drag models including crosswinds for commercial heavy vehicle
+        combinations. <i>Vehicle System Dynamics, 62</i>(5), 1085–1102.
+      </>
+    ),
+    url: 'https://research.chalmers.se/publication/535965/file/535965_Fulltext.pdf',
+  },
+  {
+    use: 'effect van tegen-, zij- en rugwind',
+    ref: <>Bäcker, J. (2021, 17 juni). <i>Wind influence on Tesla Model 3</i>. A Better Routeplanner.</>,
+    url: 'https://abetterrouteplanner.com/resources/article/2021-06-17_wind-influence',
+  },
+  {
+    use: 'basisverbruik elektronica',
+    ref: (
+      <>
+        Carlson, B. (2015, 10 juni). <i>12 volt auxiliary load on-road analysis</i> [Presentatie, 2015 DOE Vehicle Technologies Program Annual Merit
+        Review, Project ID VSS168]. Idaho National Laboratory.
+      </>
+    ),
+    url: 'https://www.energy.gov/sites/prod/files/2015/07/f24/vss168carlson2015_o.pdf',
+  },
+  {
+    use: 'snelheidslimieten buiten de bebouwde kom in Vlaanderen',
+    ref: <>European Transport Safety Council. (2017, 5 januari). <i>Flanders reduces out of town speed limits</i>.</>,
+    url: 'https://etsc.eu/flanders-reduces-out-of-town-speed-limits/',
+  },
+  {
+    use: 'bruikbare batterij, een variant van de verwarming, referentietemperatuur',
+    ref: <>EV Database. (z.d.). <i>Tesla Model Y RWD (Juniper)</i>. Geraadpleegd op 2 november 2026, van</>,
+    url: 'https://ev-database.org/car/3741/Tesla-Model-Y-RWD',
+  },
+  {
+    use: 'inschrijvingen in België in 2024 (waarom deze wagen)',
+    ref: <>Febiac. (2025a). <i>Persbericht: inschrijvingen 2024</i>.</>,
+    url: 'https://www.febiac.be/sites/default/files/media/file/2025-01/Persbericht%202024%20NL.pdf',
+  },
+  {
+    use: 'adressen voor het midden van elke gemeente',
+    ref: (
+      <>
+        FOD BOSA. (z.d.). <i>BeST Address</i> [Open data, CC BY 4.0]. Verwerkt door LeKoala (2026), <i>belgian-geography</i> (snapshot 2026-11-05).
+      </>
+    ),
+    url: 'https://opendata.bosa.be/',
+  },
+  {
+    use: 'routes (vermelding: graphhopper.com/attribution)',
+    ref: <>GraphHopper. (z.d.). <i>GraphHopper Directions API: Routing API</i> [API-documentatie].</>,
+    url: 'https://docs.graphhopper.com/openapi/routing',
+  },
+  {
+    use: 'WLTC klasse 3b als data (snelheid per seconde)',
+    ref: <>Joint Research Centre. (2019). <i>wltp</i> (versie 0.1.2a0) [Software, EUPL-licentie]. Europese Commissie.</>,
+    url: 'https://pypi.org/project/wltp/',
+  },
+  {
+    use: 'verbruik van de airco',
+    ref: (
+      <>
+        Li, K., Luo, S., Fan, L., Hu, S., Zhou, X., Tu, R., Zhang, H., Jin, X., Zhao, X., &amp; Su, L. (2021). Investigation on the performance and
+        characteristics of a heat pump system for electric vehicles under extreme temperature conditions. <i>Case Studies in Thermal Engineering, 27</i>,
+        101308.
+      </>
+    ),
+    url: 'https://doi.org/10.1016/j.csite.2021.101308',
+  },
+  {
+    use: 'wegen, wegklassen en snelheidslimieten in de routes',
+    ref: <>© OpenStreetMap-bijdragers. (z.d.). <i>OpenStreetMap</i> [Open data, ODbL].</>,
+    url: 'https://www.openstreetmap.org/copyright',
+  },
+  {
+    use: 'extra verbruik bij een koude start',
+    ref: <>Salisbury, S. (2016). <i>Cold weather on-road testing of a 2015 Nissan Leaf</i> (INL/EXT-16-39028). Idaho National Laboratory.</>,
+    url: 'https://avt.inl.gov/sites/default/files/pdf/fsev/2015LeafColdWeatherTestJune2016.pdf',
+  },
+  {
+    use: 'rijklaar gewicht',
+    ref: <>Tesla. (z.d.). <i>Model Y</i>. Geraadpleegd op 2 november 2026, van</>,
+    url: 'https://www.tesla.com/nl_be/modely',
+  },
+  {
+    use: 'testcyclus voor de bebouwde kom en de expresweg (WLTC klasse 3b)',
+    ref: (
+      <>
+        United Nations Economic Commission for Europe. (2014). <i>Global technical regulation No. 15: Worldwide harmonized Light vehicles Test
+        Procedure</i> (ECE/TRANS/180/Add.15).
+      </>
+    ),
+    url: 'https://unece.org/transport/standards/transport/vehicle-regulations-wp29/global-technical-regulations-gtrs',
+  },
+  {
+    use: 'rendement van batterij tot wiel',
+    ref: <>U.S. Department of Energy &amp; U.S. Environmental Protection Agency. (z.d.). <i>Where the energy goes: Electric cars</i>.</>,
+    url: 'https://fueleconomy.gov/feg/atv-ev.shtml',
+  },
+  {
+    use: 'standaardmassa bestuurder en passagier',
+    ref: <>Verordening (EU) nr. 1230/2012 van de Commissie van 12 december 2012.</>,
+    url: 'https://eur-lex.europa.eu/eli/reg/2012/1230/2019-12-02',
+  },
+  {
+    use: 'warmtepomp en voorverwarmen bij kou',
+    ref: (
+      <>
+        Walsh, P., Isaac, R., Vijayagopal, R., Rousseau, A., Seo, J., &amp; Kim, N. (2024). <i>Impact of cold ambient temperature and extreme
+        conditions on electric vehicles</i> (Program Record). U.S. Department of Energy, Vehicle Technologies Office.
+      </>
+    ),
+    url: 'https://www.energy.gov/sites/default/files/2024-10/Impact_of_Cold_Ambient_Temperature_on_BEV_Performance_v15_TechEditFinal_12Sep2024__0.pdf',
+  },
+  {
+    use: 'capaciteit en rendement bij kou',
+    ref: (
+      <>
+        Zhao, C., Li, Y., Yang, Y., Wan, S., Yu, F., Yu, C., Deng, C., Zhou, A., &amp; Shen, X. (2022). Research on electric vehicle range under cold
+        condition. <i>Advances in Mechanical Engineering, 14</i>(3), 1–11.
+      </>
+    ),
+    url: 'https://doi.org/10.1177/16878132221087083',
+  },
 ];
 
 function Disclaimer() {
@@ -541,16 +686,15 @@ function Disclaimer() {
       </P>
       <H>BRONNEN</H>
       <ul className="flex flex-col">
-        {SOURCES.map(([src, use, href]) => (
-          <li key={src} className="flex flex-col gap-0.5 py-2.5 border-b border-line last:border-b-0">
-            {href ? (
-              <a href={href} target="_blank" rel="noreferrer" className="font-mono text-[12px] font-semibold tracking-[0.04em] underline underline-offset-3">
-                {src}
+        {SOURCES.map(({ ref, url, use }) => (
+          <li key={url} className="flex flex-col gap-1 py-3 border-b border-line last:border-b-0">
+            <span className="font-mono text-[11px] tracking-[0.06em] text-muted uppercase">{use}</span>
+            <p className="text-[13.5px] leading-[19px]">
+              {ref}{' '}
+              <a href={url} target="_blank" rel="noreferrer" className="underline underline-offset-3 break-all">
+                {url}
               </a>
-            ) : (
-              <span className="font-mono text-[12px] font-semibold tracking-[0.04em]">{src}</span>
-            )}
-            <span className="text-[13.5px] leading-[19px] text-muted">{use}</span>
+            </p>
           </li>
         ))}
       </ul>

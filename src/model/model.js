@@ -56,7 +56,7 @@ const MAX_YAW = (20 * Math.PI) / 180;
  * Luchtweerstand in de rijrichting (N).
  * Zonder wind: ½ · ρ · CdA · v².
  * Met wind rekent de formule met de luchtsnelheid t.o.v. de auto (rijsnelheid + tegenwind, plus zijwind)
- * en een hogere weerstand als de lucht schuin aanstroomt (Askerdal et al., 2023).
+ * en een hogere weerstand als de lucht schuin aanstroomt (Askerdal et al., 2024).
  * @param {number} rho     luchtdichtheid (kg/m³)
  * @param {number} cdA     m²
  * @param {number} v       rijsnelheid (m/s)

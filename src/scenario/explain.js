@@ -2,7 +2,7 @@
  * Cijfers voor de Uitleg-pagina. Telkens één factor veranderen, de rest gelijk houden:
  * 20 °C, geen lading, geen wind, snelweg 110 km/u. Pure functies op het rekenmodel v2 (eigen berekening).
  *
- * Per onderwerp: speedRows (Snelheid), roadRows (Soort weg), loadRows (Lading), terrainRows (Terrein),
+ * Per onderwerp: speedRows en speedVariation (Snelheid), roadRows (Soort weg), loadRows (Lading), terrainRows (Terrein),
  * windRows (Wind), warmupRows (Laden en voorverwarmen), carFacts (Referentiewagen).
  * Wat van de keuzes van de gebruiker afhangt (bereik, drukste dag), komt rechtstreeks uit het plan.
  */
@@ -23,6 +23,21 @@ const SNEL = { snel: 1 };
 /** Snelweg bij verschillende snelheden. */
 export function speedRows(speeds = [90, 110, 130]) {
   return speeds.map((speedKmh) => ({ speedKmh, ...range(SNEL, { speedKmh }) }));
+}
+
+/**
+ * Constante snelheid tegenover afwisselend trager en sneller (elk de helft van de afstand), op de snelweg.
+ * Energie per km wordt gemiddeld over de afstand, dus het bereik is het harmonisch gemiddelde (eigen berekening).
+ * Optrekken en remmen tussen beide snelheden zit er niet in.
+ */
+export function speedVariation(avg = BASE.speedKmh, spread = 20) {
+  const constant = range(SNEL, { speedKmh: avg });
+  const slow = range(SNEL, { speedKmh: avg - spread });
+  const fast = range(SNEL, { speedKmh: avg + spread });
+  const h = (k) => 2 / (1 / slow[k] + 1 / fast[k]);
+  const varied = { low: h('low'), high: h('high') };
+  varied.mid = (varied.low + varied.high) / 2;
+  return { avg, slowKmh: avg - spread, fastKmh: avg + spread, constant, varied, lossPct: (1 - varied.mid / constant.mid) * 100 };
 }
 
 /** Elke soort weg (bebouwde kom, expresweg, snelweg), bij een zachte en een koude dag. */
