@@ -159,7 +159,7 @@ export default function App() {
               role="tabpanel"
               id={`overzicht-panel-${tab}`}
               aria-labelledby={`overzicht-tab-${tab}`}
-              className="flex-1 min-h-0 w-full touch-pan-y overflow-y-auto"
+              className="flex-1 min-h-0 w-full touch-pan-y overflow-x-hidden overflow-y-auto"
               {...swipe}
             >
               {tab === 'baan' ? (
