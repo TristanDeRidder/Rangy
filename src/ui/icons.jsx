@@ -52,12 +52,6 @@ export const IconPlace = () => (
     <path d="M9.79995 6.5002C9.79995 7.49431 8.99406 8.3002 7.99995 8.3002C7.00584 8.3002 6.19995 7.49431 6.19995 6.5002C6.19995 5.50608 7.00584 4.7002 7.99995 4.7002C8.99406 4.7002 9.79995 5.50608 9.79995 6.5002Z" strokeWidth="1.3" stroke="currentColor" />
   </svg>
 );
-/** Kleine pijl voor uitklapbare blokken (16 px), uit het ontwerp. */
-export const IconChevron16 = ({ up }) => (
-  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path d={up ? 'M3 10L8 5L13 10' : 'M3 6L8 11L13 6'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" stroke="currentColor" />
-  </svg>
-);
 /** Keuzerondje (aan/uit), uit het ontwerp. */
 export const IconRadio = ({ on }) => (
   <svg width={20} height={20} viewBox="0 0 20 20" fill="none" aria-hidden="true">

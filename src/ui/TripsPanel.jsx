@@ -7,7 +7,7 @@ import PlaceSearch from './PlaceSearch.jsx';
 import DayChips from './DayChips.jsx';
 import Stepper from './Stepper.jsx';
 import Switch from './Switch.jsx';
-import { IconChevron16, IconLock } from './icons.jsx';
+import { IconChevronDown, IconChevronUp, IconLock } from './icons.jsx';
 import { btnPrimary, eyebrow } from './cls.js';
 
 const round10 = (km) => Math.round(km / 10) * 10;
@@ -120,6 +120,15 @@ export default function TripsPanel({ plan, trips, situation, actions, focus }) {
   );
 }
 
+/**
+ * Rondje met pijltje, zelfde als bij Omstandigheden: na de gebruikerstest hebben Jouw situatie en elke rit
+ * dezelfde kaart als de balk Omstandigheden, zodat gebruikers één aantikbaar element leren herkennen.
+ * Pijltje naar beneden = klapt naar beneden open.
+ */
+const ToggleCircle = ({ open }) => (
+  <span className="size-9 shrink-0 rounded-full bg-[#efefef] grid place-items-center">{open ? <IconChevronUp /> : <IconChevronDown />}</span>
+);
+
 /** "Jouw situatie": thuisgemeente, laden (en laaddagen of voorverwarmen). */
 function Situation({ open, onToggle, situation, suggested, actions }) {
   const home = municipalityByNis(situation.home);
@@ -135,13 +144,13 @@ function Situation({ open, onToggle, situation, suggested, actions }) {
   };
 
   return (
-    <section className={`rounded-[14px] bg-surface border ${open ? 'border-ink' : 'border-line'}`}>
-      <button type="button" className="flex items-center gap-2.5 w-full pt-3 pb-3 px-3.5 text-left" aria-expanded={open} aria-controls="jouw-situatie" onClick={onToggle}>
+    <section className={`rounded-2xl bg-surface border ${open ? 'border-ink' : 'border-line'}`}>
+      <button type="button" className="flex items-center gap-3 w-full py-3 pr-3 pl-4 text-left" aria-expanded={open} aria-controls="jouw-situatie" onClick={onToggle}>
         <span className="flex-1 min-w-0 flex flex-col gap-[3px]">
           <span className={label}>JOUW SITUATIE</span>
           <span className="text-[14.5px] font-medium truncate">{summary}</span>
         </span>
-        <IconChevron16 up={open} />
+        <ToggleCircle open={open} />
       </button>
       {open && (
         <div id="jouw-situatie" className="flex flex-col gap-3.5 px-3.5 pb-4">
@@ -210,13 +219,18 @@ function TripItem({ trip, stat, open, onToggle, hasHome, actions }) {
   return (
     <li className="flex gap-3.5 items-start">
       <span
-        className={`size-[18px] shrink-0 rounded-full border-[1.5px] border-ink relative z-1 bg-[radial-gradient(circle,var(--color-ink)_0_4px,#fff_4.5px)] ${open ? 'mt-3.5' : 'mt-[3px]'}`}
+        className={`size-[18px] shrink-0 rounded-full border-[1.5px] border-ink relative z-1 bg-[radial-gradient(circle,var(--color-ink)_0_4px,#fff_4.5px)] ${open ? 'mt-3.5' : 'mt-[21px]'}`}
         aria-hidden="true"
       />
       {open ? (
         <TripEditor trip={trip} dest={dest} onToggle={onToggle} hasHome={hasHome} actions={actions} />
       ) : (
-        <button type="button" className="flex-1 min-w-0 flex items-center gap-2.5 text-left min-h-11 -mt-1" aria-expanded={false} onClick={onToggle}>
+        <button
+          type="button"
+          className="flex-1 min-w-0 flex items-center gap-3 py-3 pr-3 pl-4 text-left bg-surface border border-line rounded-2xl"
+          aria-expanded={false}
+          onClick={onToggle}
+        >
           <span className="flex-1 min-w-0 flex flex-col gap-1">
             <span className="font-mono text-[13px] font-semibold tracking-[0.09em] truncate">{trip.name.toUpperCase()}</span>
             <span className="flex items-center gap-2 min-w-0">
@@ -228,7 +242,7 @@ function TripItem({ trip, stat, open, onToggle, hasHome, actions }) {
               <span className="font-mono text-[11px] text-muted tracking-[0.04em] truncate">{sub}</span>
             </span>
           </span>
-          <IconChevron16 />
+          <ToggleCircle open={false} />
         </button>
       )}
     </li>
@@ -248,7 +262,7 @@ function TripEditor({ trip, dest, onToggle, hasHome, actions }) {
   };
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col gap-3.5 pt-3 pb-3.5 px-3.5 bg-surface border border-ink rounded-[14px]">
+    <div className="flex-1 min-w-0 flex flex-col gap-3.5 pt-3 pb-3.5 pr-3 pl-4 bg-surface border border-ink rounded-2xl">
       <div className="flex items-center gap-2.5">
         <label className="sr-only" htmlFor={`naam-${trip.id}`}>Naam van de rit</label>
         <input
@@ -257,8 +271,8 @@ function TripEditor({ trip, dest, onToggle, hasHome, actions }) {
           value={trip.name}
           onChange={(e) => update({ name: e.target.value })}
         />
-        <button type="button" className="size-8 grid place-items-center -mr-2" aria-expanded={true} aria-label={`${trip.name} dichtklappen`} onClick={onToggle}>
-          <IconChevron16 up />
+        <button type="button" className="shrink-0" aria-expanded={true} aria-label={`${trip.name} dichtklappen`} onClick={onToggle}>
+          <ToggleCircle open />
         </button>
       </div>
 
