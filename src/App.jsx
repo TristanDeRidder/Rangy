@@ -72,7 +72,7 @@ export default function App() {
   );
   const [topic, setTopic] = useState(null); // onderwerp in de Uitleg, null = overzicht
   const [hint, setHint] = useState(null); // onderwerp van de open "?"
-  const [sheetOpen, setSheetOpen] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false); // dicht bij de start: eerst de baan (gebruikerstest)
   const sheetDrag = useSheetDrag({ open: sheetOpen, onOpen: () => setSheetOpen(true), onClose: () => setSheetOpen(false) });
   const weather = useWeather();
   const [weatherOpen, setWeatherOpen] = useState(false);

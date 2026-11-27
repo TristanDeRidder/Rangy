@@ -114,7 +114,7 @@ export default function Controls({ variant, open, onToggle, dragHandlers, inputs
     <section className="flex flex-col">
       {/* greep + kop: hier kan je vegen (touch-none: de browser scrolt dan niet mee) */}
       <div className="flex flex-col touch-none" {...dragHandlers}>
-        {open && <div className="w-10 h-1 mb-3.5 rounded-full bg-line self-center" aria-hidden="true" />}
+        {open && <div className="w-12 h-1.25 mb-3.5 rounded-full bg-[#b8b8b8] self-center" aria-hidden="true" />}
         <button
           type="button"
           className={`flex justify-between items-center gap-3 w-full bg-surface text-left ${open ? '' : `${card} py-3 pr-3 pl-4`}`}
@@ -124,9 +124,16 @@ export default function Controls({ variant, open, onToggle, dragHandlers, inputs
         >
           <span className="flex flex-col gap-1 text-[12px] min-w-0">
             <span className={eyebrow}>OMSTANDIGHEDEN</span>
-            <span className={`${mono} font-semibold`}>{summary}</span>
           </span>
-          <span className="size-9 shrink-0 rounded-full bg-[#efefef] grid place-items-center">{open ? <IconChevronDown /> : <IconChevronUp />}</span>
+          {open ? (
+            <span className="h-9 shrink-0 inline-flex items-center gap-1 pl-3 pr-2 rounded-full bg-[#efefef] font-mono text-[11px] font-semibold tracking-[0.06em]">
+              SLUITEN <IconChevronDown />
+            </span>
+          ) : (
+            <span className="size-9 shrink-0 rounded-full bg-[#efefef] grid place-items-center">
+              <IconChevronUp />
+            </span>
+          )}
         </button>
       </div>
       <div id="omstandigheden" className={`grid transition-[grid-template-rows,opacity] duration-350 ease-soft ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`} inert={open ? undefined : 'true'}>
