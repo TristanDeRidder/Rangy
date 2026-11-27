@@ -69,7 +69,7 @@ export default function PlaceSearch({ label, value, onSelect, disabled, placehol
           id={`${id}-list`}
           role="listbox"
           aria-label={label}
-          className="absolute z-20 top-full mt-1 inset-x-0 py-1 bg-surface border border-ink rounded-xl shadow-[0_6px_20px_rgb(0_0_0/0.12)]"
+          className="absolute z-20 top-full mt-1 inset-x-0 p-1 bg-surface border border-ink rounded-xl overflow-hidden shadow-[0_6px_20px_rgb(0_0_0/0.12)]"
         >
           {results.map((m, i) => (
             <li
@@ -77,7 +77,7 @@ export default function PlaceSearch({ label, value, onSelect, disabled, placehol
               id={`${id}-opt-${i}`}
               role="option"
               aria-selected={i === active}
-              className={`flex justify-between items-baseline gap-3 min-h-11 px-3 py-2.5 cursor-pointer ${i === active ? 'bg-[#efefef]' : ''}`}
+              className={`flex justify-between items-baseline gap-3 min-h-11 px-2.5 py-2.5 rounded-lg cursor-pointer ${i === active ? 'bg-[#efefef]' : ''}`}
               onMouseDown={(e) => {
                 e.preventDefault(); // focus houden tot de keuze verwerkt is
                 choose(m);

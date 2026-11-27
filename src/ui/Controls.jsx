@@ -124,6 +124,7 @@ export default function Controls({ variant, open, onToggle, dragHandlers, inputs
         >
           <span className="flex flex-col gap-1 text-[12px] min-w-0">
             <span className={eyebrow}>OMSTANDIGHEDEN</span>
+            <span className={`${mono} font-semibold`}>{summary}</span>
           </span>
           {open ? (
             <span className="h-9 shrink-0 inline-flex items-center gap-1 pl-3 pr-2 rounded-full bg-[#efefef] font-mono text-[11px] font-semibold tracking-[0.06em]">
