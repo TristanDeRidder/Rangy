@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { perspectiveY } from '../shared/projection.js';
 import { COLORS, STATUS_COLOR, STATUS_LABEL } from '../shared/theme.js';
 import Tag, { tagLayout } from '../shared/Tag.jsx';
@@ -29,6 +30,7 @@ const pct = (v, total) => `${(v / total) * 100}%`;
  */
 export default function RoadSceneSVG({ plan }) {
   const { rangeKm, rangeT, markers } = plan;
+  const [boxRef, k] = useLabelScale();
   const ySafe = yOf(rangeT.safe ?? rangeT.low);
   const yLow = yOf(rangeT.low);
   const yHigh = yOf(rangeT.high);
@@ -39,16 +41,20 @@ export default function RoadSceneSVG({ plan }) {
   const along = [-1, -2 / 3, -1 / 3, 0, 1 / 3, 2 / 3, 1];
 
   // Een label links mag niet over de bereiklabels (links van de baan) vallen.
-  const labelZone = [yHigh - 10, yLow + 12];
+  // k: hoe groot de labels zijn tegenover de tekening (1 = zoals in Figma). Groter op gsm (baan kleiner, labels niet)
+  // en op een kleine baan (minimum lettergrootte).
+  const tagH = TAG_H * k;
+  const yHighLabel = Math.min(yHigh, yLow - 14 * k); // bovenste bereiklabel, opgeschoven als het te dicht bij het onderste staat
+  const labelZone = [yHighLabel - 10 * k, yLow + 12 * k];
   const marks = markers.map((marker, i) => {
     const layout = tagLayout(i);
     const y = yOf(marker.t);
     const s = Math.max(5, (12 * hwOf(y)) / HW_BOTTOM);
     let top = Math.max(14, y - POLE * layout.pole - s / 2);
     let side = layout.side;
-    if (side === 'left' && top - TAG_H < labelZone[1] && top > labelZone[0]) {
+    if (side === 'left' && top - tagH < labelZone[1] && top > labelZone[0]) {
       // eerst proberen: label onder de bereiklabels (kortere paal), anders naar rechts
-      const below = labelZone[1] + TAG_H;
+      const below = labelZone[1] + tagH;
       if (below <= y - s) top = below;
       else side = 'right';
     }
@@ -61,7 +67,7 @@ export default function RoadSceneSVG({ plan }) {
   )} km mogelijk.${marks.map(({ marker }) => ` ${marker.name} ${Math.round(marker.distanceKm)} km: ${STATUS_LABEL[marker.status]}.`).join('')}`;
 
   return (
-    <div className={sceneBox}>
+    <div ref={boxRef} className={sceneBox}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
         <defs>
           <pattern id="reserve-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -95,8 +101,8 @@ export default function RoadSceneSVG({ plan }) {
 
         {/* Hulplijnen zeker / mogelijk naar links, reserve naar rechts */}
         <g stroke={COLORS.ink} strokeDasharray="3 3">
-          <line x1="52" y1={yLow} x2={xAt(-1, yLow) - 2} y2={yLow} />
-          <line x1="52" y1={yHigh} x2={xAt(-1, yHigh) - 2} y2={yHigh} />
+          <line x1="60" y1={yLow} x2={xAt(-1, yLow) - 2} y2={yLow} />
+          <line x1="60" y1={yHigh} x2={xAt(-1, yHigh) - 2} y2={yHigh} />
           <line x1={xAt(1, yReserve) + 2} y1={yReserve} x2={xAt(1, yReserve) + 40} y2={yReserve} />
         </g>
 
@@ -113,7 +119,7 @@ export default function RoadSceneSVG({ plan }) {
 
       {/* HTML-laag: bereiklabels, reserve en markeringen */}
       <div className={sceneOverlay}>
-        <span className={rangeLabel} style={{ top: pct(yHigh, H) }}>{Math.round(rangeKm.high / 10) * 10} KM</span>
+        <span className={rangeLabel} style={{ top: pct(yHighLabel, H) }}>{Math.round(rangeKm.high / 10) * 10} KM</span>
         <span className={rangeLabel} style={{ top: pct(yLow, H) }}>{Math.round(rangeKm.low / 10) * 10} KM</span>
         <span
           className="absolute -translate-y-1/2 font-mono text-[0.83em] text-muted tracking-[0.06em] whitespace-nowrap"
@@ -127,6 +133,32 @@ export default function RoadSceneSVG({ plan }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Verhouding tussen de werkelijke lettergrootte van de labels en die bij de ontwerpverhouding (12 px op 393).
+ * Gemeten op de overlay; volgt de grootte van de baan (ResizeObserver).
+ * @returns {[React.RefObject<HTMLDivElement>, number]}
+ */
+function useLabelScale() {
+  const ref = useRef(null);
+  const [k, setK] = useState(1);
+  useLayoutEffect(() => {
+    const box = ref.current;
+    if (!box || typeof ResizeObserver === 'undefined') return undefined;
+    const measure = () => {
+      const w = box.getBoundingClientRect().width;
+      const overlay = box.lastElementChild;
+      const font = overlay ? parseFloat(getComputedStyle(overlay).fontSize) : 0;
+      // nooit onder 1: op een grote baan (laptop) blijft de plaatsing zoals in Figma
+      if (w > 0 && font > 0) setK(Math.max(1, Math.round((font / ((w * 12) / W)) * 100) / 100));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, k];
 }
 
 function Car() {

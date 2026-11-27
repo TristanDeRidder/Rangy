@@ -6,6 +6,9 @@ export const roundBtn = 'size-11 rounded-full border border-line bg-surface grid
 export const btnPrimary = 'w-full h-12 rounded-3xl bg-ink text-white flex items-center font-mono text-[12px] font-semibold tracking-[0.12em]';
 export const rangeLabel = 'absolute left-2 -translate-y-1/2 font-mono font-medium tracking-normal';
 // gsm: zo breed als past in de hoogte van de size-container rond de baan (App.jsx), laptop: naar de schermhoogte
-export const sceneBox = 'relative w-screen aspect-[350/307] mx-auto [container-type:inline-size] max-wide:w-[min(100%,calc(100cqh*393/350))] wide:w-[min(100%,calc((100vh-140px)*393/350))] [&_svg]:block [&_svg]:size-full [&_canvas]:block [&_canvas]:size-full';
-// labels: 12 px bij de ontwerpbreedte (393 px), kleiner op een kleinere baan, nooit onder 9,5 px
-export const sceneOverlay = 'absolute inset-0 pointer-events-none text-[clamp(9.5px,calc(100cqw*12/393),12px)]';
+// gsm: de baan bewust 10 % kleiner dan de beschikbare ruimte, voor lucht rond de conclusie (na de gebruikerstest).
+// --scene-scale: hoeveel kleiner de baan is; de labels compenseren dat en blijven even groot als zonder verkleining.
+export const sceneBox = 'relative [--scene-scale:0.9] wide:[--scene-scale:1] w-[calc(100vw*var(--scene-scale))] aspect-[350/307] mx-auto [container-type:inline-size] max-wide:w-[min(calc(100%*var(--scene-scale)),calc(100cqh*393/350*var(--scene-scale)))] wide:w-[min(100%,calc((100vh-140px)*393/350))] [&_svg]:block [&_svg]:size-full [&_canvas]:block [&_canvas]:size-full';
+// labels: 12 px bij de ontwerpbreedte (393 px), kleiner op een kleinere baan, nooit onder 9,5 px.
+// Gedeeld door --scene-scale: de verkleining van de baan op gsm maakt de labels niet kleiner.
+export const sceneOverlay = 'absolute inset-0 pointer-events-none text-[clamp(9.5px,calc(100cqw*12/393/var(--scene-scale)),12px)]';

@@ -14,6 +14,7 @@ import HintDialog from './ui/HintDialog.jsx';
 import WeatherDialog from './ui/WeatherDialog.jsx';
 import WelcomeDialog, { welcomeSeen } from './ui/WelcomeDialog.jsx';
 import { useSheetDrag } from './ui/useSheetDrag.js';
+import { conclusion } from './scenario/conclusion.js';
 import { IconArrow } from './ui/icons.jsx';
 import { btnPrimary, card } from './ui/cls.js';
 
@@ -162,8 +163,12 @@ export default function App() {
               {...swipe}
             >
               {tab === 'baan' ? (
-                <div className="h-full flex flex-col justify-center pt-9 pb-3 short:pt-8 short:pb-1.5 @container-size">
-                  <RoadScene plan={plan} />
+                <div className="h-full flex flex-col">
+                  {/* conclusie in gewone taal (zie scenario/conclusion.js); de baan krimpt mee */}
+                  <p className="shrink-0 max-w-88 mx-auto px-2 pt-2.5 pb-2.5 text-center text-balance text-[13.5px] leading-[1.35]">{conclusion(plan)}</p>
+                  <div className="flex-1 min-h-0 flex flex-col justify-center pt-9 pb-3 short:pt-8 short:pb-1.5 @container-size">
+                    <RoadScene plan={plan} />
+                  </div>
                 </div>
               ) : (
                 <WeekCard plan={plan} onChangeCharging={() => openTrips('situatie')} onAddTrips={() => openTrips()} />
